@@ -1,0 +1,17 @@
+# Paket | Grund   (Phase 1: sofort; Launcher/Screensaver folgen in Phase 2)
+com.google.android.tvrecommendations | Werbe-/Sponsored-Zeilen im Stock-Launcher
+android.autoinstalls.config.xgimi.xgimigalileo | Play Auto Install: drückt Hersteller-Bloat-Apps nach
+com.xgimi.simpservice | XGIMI Push-Installer (INSTALL_PACKAGES + Internet, Boot-Start)
+com.xgimi.bugreportsender | XGIMI Telemetrie/Bugreport-Upload
+com.xgimi.atmosphere | XGIMI Dynamic Screensaver, lädt Inhalte nach, 90 MB resident
+com.xgimi.doubanfm | XGIMI Musik-App (China-Dienst), ungenutzt
+com.xgimi.burnin | Werks-Einbrenntest
+com.xgimi.minitvfactory | Werks-Testmenü
+fusion.android.tv.demo | Händler-Demomodus
+com.google.android.apps.nbu.smartconnect.tv | Google Datensparer/VPN-Client, Boot-Start
+com.google.android.feedback | Google Feedback-/Absturzberichte
+com.google.android.play.games | Play Spiele (Bloat)
+com.google.android.videos | Play Filme (Werbefläche)
+com.google.android.partnersetup | Partner-Setup (nach Ersteinrichtung unnötig)
+com.google.android.onetimeinitializer | Einmal-Initialisierer
+com.google.android.tungsten.setupwraith | Setup-Assistent (35 MB resident; Tipp aus der Community)

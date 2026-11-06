@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0e11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Skyline">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Skyline</title>
+<style>
+  :root {
+    --bg: #0d0e11; --surface: #18191e; --raised: #24262c; --raised-on: #34363e;
+    --text: #f4f4f6; --muted: #9b9ca5; --ok: #34c759; --warn: #ff9f0a;
+    --r: 22px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", sans-serif;
+    padding: calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 28px);
+    max-width: 520px; margin: 0 auto; user-select: none; -webkit-user-select: none;
+  }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  header img { width: 30px; height: 30px; border-radius: 8px; }
+  header h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.2px; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+  .dot.ok { background: var(--ok); }
+
+  /* Touchpad wie bei der Apple-TV-Fernbedienung: wischen = Pfeile, tippen = OK, halten = lang OK */
+  .pad {
+    position: relative; aspect-ratio: 1 / .92; border-radius: 30px; overflow: hidden; touch-action: none;
+    background: radial-gradient(120% 90% at 50% 0%, #22242a, var(--surface) 70%);
+    box-shadow: 0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); }
+  .seg button { border: 0; border-radius: 10px; background: none; color: var(--muted); font: 600 14px/1 inherit; padding: 10px 0; }
+  .seg button.on { background: var(--raised-on); color: var(--text); }
+  .pad .hint { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-size: 13px; color: #6d6e76; pointer-events: none; }
+  .pad .touch { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255,255,255,.22), transparent); opacity: 0; transition: opacity .2s; }
+  .pad.active .touch { opacity: 1; }
+  .pad .edge { position: absolute; pointer-events: none; opacity: 0; transition: opacity .25s; }
+  .pad .edge.flash { opacity: 1; transition: none; }
+  .edge.up    { left: 0; right: 0; top: 0; height: 70px; background: linear-gradient(rgba(255,255,255,.16), transparent); }
+  .edge.down  { left: 0; right: 0; bottom: 0; height: 70px; background: linear-gradient(0deg, rgba(255,255,255,.16), transparent); }
+  .edge.left  { top: 0; bottom: 0; left: 0; width: 70px; background: linear-gradient(90deg, rgba(255,255,255,.16), transparent); }
+  .edge.right { top: 0; bottom: 0; right: 0; width: 70px; background: linear-gradient(-90deg, rgba(255,255,255,.16), transparent); }
+  .pad .long { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; color: var(--text); opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .pad.holding .long { opacity: 1; }
+
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; justify-items: center; }
+  .btn { width: 68px; height: 68px; border-radius: 50%; border: 0; background: var(--raised); color: var(--text);
+    display: grid; place-items: center; box-shadow: 0 6px 14px rgba(0,0,0,.28); transition: transform .1s, background .1s; }
+  .btn:active, .btn.on { background: var(--raised-on); transform: scale(.94); }
+  .btn svg { width: 26px; height: 26px; fill: currentColor; }
+
+  h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin: 28px 4px 10px; }
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .chip { border: 0; border-radius: 16px; background: var(--raised); color: var(--text); padding: 14px 8px; min-height: 64px;
+    font: 500 13px/1.2 inherit; display: flex; flex-direction: column; align-items: center; gap: 7px; transition: transform .1s, background .1s; }
+  .chip:active { background: var(--raised-on); transform: scale(.96); }
+  .chip svg { width: 22px; height: 22px; fill: currentColor; }
+
+  .apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .app { border: 0; padding: 0; background: none; color: var(--text); text-align: center; font: 12px/1.25 inherit; }
+  .app img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; display: block; background: var(--raised);
+    box-shadow: 0 6px 14px rgba(0,0,0,.3); transition: transform .12s; }
+  .app:active img { transform: scale(.95); }
+  .app span { display: block; margin-top: 6px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .kbd { display: flex; gap: 10px; }
+  .kbd input { flex: 1; min-width: 0; height: 52px; border-radius: 16px; border: 0; background: var(--raised); color: var(--text);
+    padding: 0 16px; font: 16px inherit; outline: none; }
+  .kbd input:focus { background: var(--raised-on); }
+  .kbd button { height: 52px; min-width: 52px; border-radius: 16px; border: 0; background: var(--raised); color: var(--text); font: 600 15px inherit; padding: 0 14px; }
+  .kbd button:active { background: var(--raised-on); }
+  .note { font-size: 13px; color: var(--muted); margin: 10px 4px 0; }
+
+  /* Reiter */
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: 14px; background: var(--surface);
+    position: sticky; top: calc(env(safe-area-inset-top) + 6px); z-index: 5; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+  .tabs button { border: 0; border-radius: 10px; background: none; color: var(--muted); font: 600 14px/1 inherit; padding: 11px 0; }
+  .tabs button.on { background: var(--raised-on); color: var(--text); }
+  section[hidden] { display: none; }
+
+  /* Medien */
+  .add { width: 100%; border: 0; border-radius: var(--r); background: var(--text); color: var(--bg); font: 600 16px/1 inherit;
+    padding: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+  .add:active { transform: scale(.98); }
+  .add svg { width: 20px; height: 20px; fill: currentColor; }
+  .card { background: var(--surface); border-radius: var(--r); padding: 16px; margin-top: 14px; box-shadow: 0 10px 26px rgba(0,0,0,.32); }
+  .card h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .card .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+  .tag { border: 0; border-radius: 999px; background: var(--raised); color: var(--text); font: 500 14px/1 inherit; padding: 10px 14px; }
+  .tag.on { background: var(--text); color: var(--bg); }
+  .lbl { font-size: 12px; color: var(--muted); margin: 10px 2px 0; }
+  .field { width: 100%; height: 48px; border-radius: 14px; border: 0; background: var(--raised); color: var(--text); padding: 0 14px; font: 16px inherit; outline: none; }
+  .field:focus { background: var(--raised-on); }
+  .primary { width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--text); color: var(--bg); font: 600 16px inherit; margin-top: 14px; }
+  .primary:disabled { opacity: .45; }
+  .ghost { height: 44px; border: 0; border-radius: 12px; background: var(--raised); color: var(--text); font: 600 14px inherit; padding: 0 16px; }
+  .ghost.danger { color: #ff6b61; }
+  .bar { height: 6px; border-radius: 3px; background: var(--raised); overflow: hidden; margin-top: 10px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--text); transition: width .2s; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 18px; }
+  .thumb { position: relative; border: 0; padding: 0; background: none; color: var(--text); text-align: left; font: 13px/1.25 inherit; }
+  .thumb .img { aspect-ratio: 16 / 9; border-radius: 16px; background: var(--raised) center / cover no-repeat; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+  .thumb .meta { margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .thumb .meta small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .thumb .kind { position: absolute; left: 8px; top: 8px; font: 600 11px/1 inherit; padding: 5px 8px; border-radius: 999px; background: rgba(0,0,0,.55); backdrop-filter: blur(8px); }
+  .thumb .live { position: absolute; right: 8px; top: 8px; font: 600 11px/1 inherit; padding: 5px 8px; border-radius: 999px; background: var(--text); color: var(--bg); }
+  .empty { text-align: center; color: var(--muted); padding: 34px 10px 10px; font-size: 14px; }
+  .sheet { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; z-index: 20; }
+  .sheet[hidden] { display: none; }
+  .sheet .panel { width: 100%; max-width: 520px; margin: 0 auto; background: var(--surface); border-radius: 26px 26px 0 0;
+    padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px); box-shadow: 0 -12px 30px rgba(0,0,0,.4); max-height: 88vh; overflow: auto; }
+  .sheet .prev { aspect-ratio: 16 / 9; border-radius: 16px; background: var(--raised) center / cover no-repeat; margin-bottom: 14px; }
+  .actions { display: flex; gap: 10px; margin-top: 14px; }
+  .actions > * { flex: 1; }
+
+  /* Einstellungen */
+  .set { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
+  .set + .set { padding-top: 4px; }
+  .set .txt { flex: 1; min-width: 0; }
+  .set .txt b { display: block; font-weight: 600; font-size: 15px; }
+  .set .txt span { color: var(--muted); font-size: 13px; }
+  .switch { position: relative; width: 52px; height: 32px; flex: none; }
+  .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+  .switch i { position: absolute; inset: 0; border-radius: 16px; background: var(--raised-on); transition: background .2s; pointer-events: none; }
+  .switch i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  .switch input:checked + i { background: var(--ok); }
+  .switch input:checked + i::after { transform: translateX(20px); }
+  /* Positionswahl als Mini-Bildschirm: Ecke antippen */
+  .screen { position: relative; width: 112px; aspect-ratio: 16 / 9; border-radius: 10px; flex: none;
+    background: linear-gradient(160deg, #3a4150, #1d2028); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+  .screen button { position: absolute; width: 50%; height: 50%; border: 0; background: none; padding: 0; }
+  .screen button::after { content: ""; position: absolute; width: 22px; height: 10px; border-radius: 3px; background: rgba(255,255,255,.18); }
+  .screen button[data-pos="tl"] { left: 0; top: 0; } .screen button[data-pos="tl"]::after { left: 7px; top: 7px; }
+  .screen button[data-pos="tr"] { right: 0; top: 0; } .screen button[data-pos="tr"]::after { right: 7px; top: 7px; }
+  .screen button[data-pos="bl"] { left: 0; bottom: 0; } .screen button[data-pos="bl"]::after { left: 7px; bottom: 7px; }
+  .screen button[data-pos="br"] { right: 0; bottom: 0; } .screen button[data-pos="br"]::after { right: 7px; bottom: 7px; }
+  .screen button.on::after { background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.5); }
+  .screen button:disabled { display: none; }
+  .screen.off { opacity: .35; pointer-events: none; }
+  .results { margin-top: 8px; display: grid; gap: 6px; }
+  .results button { border: 0; border-radius: 12px; background: var(--raised); color: var(--text); text-align: left; padding: 12px 14px; font: 15px inherit; }
+  .results button small { color: var(--muted); display: block; font-size: 12px; margin-top: 2px; }
+  .row2 { display: flex; gap: 10px; margin-top: 10px; }
+  .row2 .field { flex: 1; min-width: 0; }
+  .status-line { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+  details summary { color: var(--muted); font-size: 13px; margin-top: 12px; cursor: pointer; }
+  .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg);
+    font: 600 14px/1.2 inherit; padding: 12px 18px; border-radius: 999px; opacity: 0; transition: .25s; pointer-events: none; z-index: 30; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header>
+  <img src="/icon-192.png" alt="">
+  <h1>Skyline</h1>
+  <div class="status"><span id="statusText">verbinde …</span><span class="dot" id="dot"></span></div>
+</header>
+
+<nav class="tabs"><button data-tab="remote" class="on">Steuern</button><button data-tab="media">Medien</button><button data-tab="settings">Einstellungen</button></nav>
+
+<section id="tab-remote">
+
+<div class="seg" role="tablist"><button id="modeKeys" class="on">Pfeile</button><button id="modeMouse">Maus</button></div>
+<div class="pad" id="pad">
+  <div class="edge up"></div><div class="edge down"></div><div class="edge left"></div><div class="edge right"></div>
+  <div class="touch" id="touch"></div>
+  <div class="long">Lang gedrückt</div>
+  <div class="hint" id="padHint">Wischen · Tippen = OK · Halten = lang OK</div>
+</div>
+
+<div class="row">
+  <button class="btn" data-key="4" aria-label="Zurück"><svg viewBox="0 0 24 24"><path d="M11.7 4.3a1 1 0 010 1.4L6.4 11H20a1 1 0 110 2H6.4l5.3 5.3a1 1 0 01-1.4 1.4l-7-7a1 1 0 010-1.4l7-7a1 1 0 011.4 0z"/></svg></button>
+  <button class="btn" data-key="3" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M11.3 3.3a1 1 0 011.4 0l8 7.5a1 1 0 01-.7 1.7H19V20a1 1 0 01-1 1h-4v-6h-4v6H6a1 1 0 01-1-1v-7.5H4a1 1 0 01-.7-1.7z"/></svg></button>
+  <button class="btn" data-key="85" aria-label="Wiedergabe/Pause"><svg viewBox="0 0 24 24"><path d="M3 5.5a1 1 0 011.5-.9l8 5.5a1 1 0 010 1.7l-8 5.5A1 1 0 013 16.4zM15 5h2v14h-2zm4 0h2v14h-2z"/></svg></button>
+  <button class="btn" data-key="25" data-repeat aria-label="Leiser"><svg viewBox="0 0 24 24"><path d="M4 9h3l5-4v14l-5-4H4a1 1 0 01-1-1v-4a1 1 0 011-1zm11 2h6v2h-6z"/></svg></button>
+  <button class="btn" data-key="164" aria-label="Stumm"><svg viewBox="0 0 24 24"><path d="M4 9h3l5-4v14l-5-4H4a1 1 0 01-1-1v-4a1 1 0 011-1zm12.3-.7l1.7 1.7 1.7-1.7 1.4 1.4-1.7 1.7 1.7 1.7-1.4 1.4-1.7-1.7-1.7 1.7-1.4-1.4 1.7-1.7-1.7-1.7z"/></svg></button>
+  <button class="btn" data-key="24" data-repeat aria-label="Lauter"><svg viewBox="0 0 24 24"><path d="M4 9h3l5-4v14l-5-4H4a1 1 0 01-1-1v-4a1 1 0 011-1zm13-1h2v3h3v2h-3v3h-2v-3h-3v-2h3z"/></svg></button>
+</div>
+
+<h2>Schnell</h2>
+<div class="chips">
+  <button class="chip" data-action="keystone"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M2 5h20l-3.5 14h-13zm3 2l2.6 10h8.8L19 7z"/></svg>Trapez</button>
+  <button class="chip" data-action="window"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3 9V5h4M17 5h4v4M21 15v4h-4M7 19H3v-4"/></svg>Fenster</button>
+  <button class="chip" data-action="bigclock"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm0 2a8 8 0 100 16 8 8 0 000-16zm1 3v4.6l3.2 1.9-1 1.7L11 12.7V7z"/></svg>Große Uhr</button>
+  <button class="chip" data-action="seconds"><svg viewBox="0 0 24 24"><path d="M9 2h6v2H9zm3 3a8 8 0 110 16 8 8 0 010-16zm0 2a6 6 0 100 12 6 6 0 000-12zm-1 2h2v4h-2z"/></svg>Sekunden</button>
+  <button class="chip" data-action="nextvideo"><svg viewBox="0 0 24 24"><path d="M3 6a2 2 0 012-2h10a2 2 0 012 2v3l4-2.5v11L17 15v3a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Video</button>
+  <button class="chip" data-action="wifi"><svg viewBox="0 0 24 24"><path d="M12 18.5a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zM2.1 8.6a14 14 0 0119.8 0l-1.4 1.4a12 12 0 00-17 0zm3.5 3.5a9 9 0 0112.8 0L17 13.5a7 7 0 00-10 0zm3.5 3.5a4 4 0 015.8 0L13.5 17a2 2 0 00-3 0z"/></svg>WLAN</button>
+  <button class="chip" data-action="settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 000-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 00-1.7-1L15 3h-4l-.4 2.7a7.4 7.4 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 000 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 001.7 1L11 21h4l.4-2.7a7.4 7.4 0 001.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1116.5 12 3.5 3.5 0 0113 15.5z"/></svg>Einstellungen</button>
+</div>
+
+<h2>Tastatur</h2>
+<div class="kbd">
+  <input id="text" placeholder="Text eintippen …" autocomplete="off" autocapitalize="off" enterkeyhint="send">
+  <button id="del" aria-label="Löschen">⌫</button>
+  <button id="send">Senden</button>
+</div>
+<p class="note">Erst am Beamer ein Suchfeld auswählen, dann hier tippen.</p>
+
+<h2>Apps</h2>
+<div class="apps" id="apps"></div>
+
+<p class="note" id="getapp" hidden style="text-align:center;margin-top:28px">Lieber als echte App? <a href="/skyline-remote.apk" style="color:var(--text)">Skyline-App für Android laden</a></p>
+</section>
+
+<!-- ---------- Medien: eigene Fotos und Videos für den Hintergrund ---------- -->
+<section id="tab-media" hidden>
+  <button class="add" id="pick"><svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>Fotos oder Videos hinzufügen</button>
+  <input type="file" id="files" accept="image/*,video/*" multiple hidden>
+
+  <div class="card" id="upCard" hidden>
+    <h3 id="upTitle">1 Datei</h3>
+    <p class="sub">Optional: Wann soll es laufen? Ohne Auswahl läuft es bei jedem Wetter.</p>
+    <div class="lbl">Wetter</div>
+    <div class="tags" data-group="wetter"><button class="tag" data-t="klar">Klar</button><button class="tag" data-t="wolkig">Wolkig</button><button class="tag" data-t="regen">Regen</button><button class="tag" data-t="schnee">Schnee</button></div>
+    <div class="lbl">Tageszeit</div>
+    <div class="tags" data-group="zeit"><button class="tag" data-t="tag">Tag</button><button class="tag" data-t="daemmerung">Dämmerung</button><button class="tag" data-t="nacht">Nacht</button></div>
+    <div class="lbl">Jahreszeit</div>
+    <div class="tags" data-group="saison"><button class="tag" data-t="fruehling">Frühling</button><button class="tag" data-t="sommer">Sommer</button><button class="tag" data-t="herbst">Herbst</button><button class="tag" data-t="winter">Winter</button></div>
+    <button class="primary" id="upGo">Hochladen</button>
+    <div class="bar" id="upBar" hidden><i></i></div>
+    <div class="status-line" id="upStatus"></div>
+  </div>
+
+  <div class="grid" id="mediaGrid"></div>
+  <p class="note" id="mediaNote"></p>
+</section>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel">
+    <div class="prev" id="shPrev"></div>
+    <h3 id="shName" style="margin:0 0 2px;font-size:16px;word-break:break-all"></h3>
+    <p class="sub" id="shSub" style="color:var(--muted);font-size:13px;margin:0 0 6px"></p>
+    <div class="lbl">Wetter</div>
+    <div class="tags" data-group="wetter"><button class="tag" data-t="klar">Klar</button><button class="tag" data-t="wolkig">Wolkig</button><button class="tag" data-t="regen">Regen</button><button class="tag" data-t="schnee">Schnee</button></div>
+    <div class="lbl">Tageszeit</div>
+    <div class="tags" data-group="zeit"><button class="tag" data-t="tag">Tag</button><button class="tag" data-t="daemmerung">Dämmerung</button><button class="tag" data-t="nacht">Nacht</button></div>
+    <div class="lbl">Jahreszeit</div>
+    <div class="tags" data-group="saison"><button class="tag" data-t="fruehling">Frühling</button><button class="tag" data-t="sommer">Sommer</button><button class="tag" data-t="herbst">Herbst</button><button class="tag" data-t="winter">Winter</button></div>
+    <div class="actions"><button class="ghost" id="shShow">Jetzt zeigen</button><button class="ghost" id="shSave">Speichern</button></div>
+    <div class="actions"><button class="ghost danger" id="shDel">Löschen</button><button class="ghost" id="shClose">Schließen</button></div>
+  </div>
+</div>
+
+<!-- ---------- Einstellungen ---------- -->
+<section id="tab-settings" hidden>
+  <div class="card">
+    <h3>Ort für das Wetter</h3>
+    <p class="sub" id="ortNow">…</p>
+    <div class="row2"><input class="field" id="ortQ" placeholder="Ort suchen, z. B. Hannover" autocomplete="off" enterkeyhint="search"><button class="ghost" id="ortGo">Suchen</button></div>
+    <div class="results" id="ortRes"></div>
+    <details><summary>Ort automatisch ermitteln</summary>
+      <p class="note">Ermittelt den Ort über die Internetadresse. Das ist oft ungenau, deshalb lieber oben einen Ort suchen.</p>
+      <button class="ghost" id="ortAuto" style="margin-top:8px">Automatisch verwenden</button>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3>Wetteranzeige</h3>
+    <p class="sub">Ein- oder ausschalten, dann im Mini-Bildschirm die Ecke antippen.</p>
+    <div id="wxPlaces"></div>
+  </div>
+
+  <div class="card">
+    <h3>Updates</h3>
+    <p class="sub" id="updVer">…</p>
+    <div class="set"><div class="txt"><b>Automatisch installieren</b><span>beim Start, beim Aufwachen und alle 6 Stunden</span></div>
+      <label class="switch"><input type="checkbox" id="updAuto"><i></i></label></div>
+    <button class="primary" id="updCheck" style="margin-top:4px">Jetzt nach Updates suchen</button>
+    <div class="status-line" id="updStatus"></div>
+    <details><summary>Quelle (GitHub)</summary>
+      <div class="lbl">Repository</div>
+      <input class="field" id="updRepo" placeholder="besitzer/repo" autocomplete="off" autocapitalize="off">
+      <div class="lbl">Token (nur bei privatem Repository, Leserecht genügt)</div>
+      <input class="field" id="updToken" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off">
+      <button class="ghost" id="updSave" style="margin-top:10px">Quelle speichern</button>
+    </details>
+  </div>
+
+  <div class="card" id="switchCard" hidden>
+    <h3>Mehrere Beamer</h3>
+    <p class="sub">Sucht im WLAN nach allen Beamern mit Skyline.</p>
+    <button class="ghost" id="switchBeamer" style="width:100%">Beamer wechseln</button>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const buzz = (ms = 8) => navigator.vibrate && navigator.vibrate(ms);
+if (/Android/.test(navigator.userAgent) && !/SkylineRemote/.test(navigator.userAgent)) $('#getapp').hidden = false;
+
+// Befehle strikt der Reihe nach senden (sonst überholen sich Pfeile)
+let chain = Promise.resolve();
+function post(path, body) {
+  chain = chain.then(() => fetch('/api/' + path, { method: 'POST', body: body || '' })
+    .then(r => r.json()).then(j => { setOnline(true); return j; })
+    .catch(() => setOnline(false)));
+  return chain;
+}
+const key = code => post('key/' + code);
+
+function setOnline(ok, text) {
+  $('#dot').classList.toggle('ok', !!ok);
+  $('#statusText').textContent = text || (ok ? 'verbunden' : 'nicht erreichbar');
+}
+
+// ---------- Touchpad ----------
+const pad = $('#pad'), touch = $('#touch');
+const STEP = 64, CODES = { up: 19, down: 20, left: 21, right: 22 };
+let sx, sy, ox, oy, moved, holdTimer, holding, repeatTimer, active = false;
+
+function flash(dir) {
+  const e = pad.querySelector('.edge.' + dir);
+  e.classList.add('flash'); requestAnimationFrame(() => requestAnimationFrame(() => e.classList.remove('flash')));
+}
+function showTouch(x, y) { const r = pad.getBoundingClientRect(); touch.style.left = (x - r.left) + 'px'; touch.style.top = (y - r.top) + 'px'; }
+
+// ---------- Maus-Modus: Zeiger bewegen, tippen = Klick, zwei Finger = wischen ----------
+let mouse = localStorage.getItem('mode') === 'mouse';
+function setMode(m) {
+  mouse = m; localStorage.setItem('mode', m ? 'mouse' : 'keys');
+  $('#modeKeys').classList.toggle('on', !m); $('#modeMouse').classList.toggle('on', m);
+  $('#padHint').textContent = m ? 'Bewegen · Tippen = Klick · Halten = lang · 2 Finger = wischen' : 'Wischen · Tippen = OK · Halten = lang OK';
+  if (!m) post('ptr/hide');
+}
+$('#modeKeys').onclick = () => { buzz(); setMode(false); };
+$('#modeMouse').onclick = () => { buzz(); setMode(true); };
+setMode(mouse);
+
+let pend = null;   // Bewegungen sammeln, solange noch eine unterwegs ist
+function ptrMove(kind, dx, dy) {
+  if (pend && pend.kind === kind) { pend.dx += dx; pend.dy += dy; return; }
+  const p = pend = { kind, dx, dy };
+  chain = chain.then(() => {
+    if (pend === p) pend = null;
+    const x = Math.round(p.dx), y = Math.round(p.dy);
+    if (!x && !y) return;
+    return fetch('/api/ptr/' + kind + '/' + x + '/' + y, { method: 'POST' }).catch(() => {});
+  });
+}
+const accel = d => d * (2.4 + Math.min(Math.abs(d) * .09, 3.2));
+const pts = new Map();
+let mDown = 0, mMoved = false, mLong = false, mTwo = false, mHold;
+
+function mouseDown(e) {
+  pad.setPointerCapture(e.pointerId);
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  pad.classList.add('active'); showTouch(e.clientX, e.clientY);
+  if (pts.size === 1) {
+    mDown = Date.now(); mMoved = false; mLong = false; mTwo = false; sx = e.clientX; sy = e.clientY;
+    mHold = setTimeout(() => { if (!mMoved && !mTwo) { mLong = true; buzz(25); post('ptr/long'); } }, 550);
+  } else if (pts.size === 2 && !mTwo) {
+    mTwo = true; clearTimeout(mHold); post('ptr/dragstart');
+  }
+}
+function mouseMove(e) {
+  const p = pts.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  showTouch(e.clientX, e.clientY);
+  if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) { mMoved = true; clearTimeout(mHold); }
+  if (mTwo) ptrMove('dragmove', dx * 1.6, dy * 1.6);       // beide Finger melden: zusammen ~3x Weg
+  else if (!mLong) ptrMove('move', accel(dx), accel(dy));
+}
+function mouseUp(e) {
+  if (!pts.has(e.pointerId)) return;
+  pts.delete(e.pointerId);
+  if (pts.size > 0) return;
+  clearTimeout(mHold);
+  pad.classList.remove('active');
+  if (mTwo) { post('ptr/dragend'); return; }
+  if (!mMoved && !mLong && Date.now() - mDown < 400) { buzz(10); post('ptr/tap'); }
+}
+pad.addEventListener('pointerdown', e => { if (mouse) { e.stopImmediatePropagation(); mouseDown(e); } }, true);
+pad.addEventListener('pointermove', e => { if (mouse) { e.stopImmediatePropagation(); mouseMove(e); } }, true);
+pad.addEventListener('pointerup', e => { if (mouse) { e.stopImmediatePropagation(); mouseUp(e); } }, true);
+pad.addEventListener('pointercancel', e => { if (mouse) { e.stopImmediatePropagation(); mouseUp(e); } }, true);
+
+pad.addEventListener('pointerdown', e => {
+  pad.setPointerCapture(e.pointerId);
+  active = true; moved = false; holding = false;
+  sx = ox = e.clientX; sy = oy = e.clientY;
+  pad.classList.add('active'); showTouch(e.clientX, e.clientY);
+  holdTimer = setTimeout(() => {           // langes OK: echte Taste halten (DOWN, Wiederholung, später UP)
+    holding = true; pad.classList.add('holding'); buzz(25);
+    post('down/23'); post('repeat/23/1');
+    let n = 2; repeatTimer = setInterval(() => post('repeat/23/' + (n++)), 120);
+  }, 520);
+});
+
+pad.addEventListener('pointermove', e => {
+  if (!active) return;
+  showTouch(e.clientX, e.clientY);
+  if (Math.hypot(e.clientX - sx, e.clientY - sy) > 12 && !holding) { moved = true; clearTimeout(holdTimer); }
+  if (holding) return;
+  const dx = e.clientX - ox, dy = e.clientY - oy;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) >= STEP) {
+    const dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    key(CODES[dir]); flash(dir); buzz(6);
+    ox = e.clientX; oy = e.clientY;          // weiterwischen = weitere Schritte
+  }
+});
+
+function end(e) {
+  if (!active) return;
+  active = false; clearTimeout(holdTimer); clearInterval(repeatTimer);
+  pad.classList.remove('active', 'holding');
+  if (holding) { post('up/23'); return; }
+  if (!moved) { key(23); buzz(10); return; }
+  // kurzer, schneller Wisch unter der Schrittweite: trotzdem ein Schritt
+  const dx = e.clientX - ox, dy = e.clientY - oy;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) >= 24 && Math.hypot(e.clientX - sx, e.clientY - sy) < STEP) {
+    const dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    key(CODES[dir]); flash(dir); buzz(6);
+  }
+}
+pad.addEventListener('pointerup', end);
+pad.addEventListener('pointercancel', end);
+
+// ---------- Tasten (Lautstärke: gedrückt halten wiederholt) ----------
+document.querySelectorAll('.btn').forEach(b => {
+  let t, r;
+  b.addEventListener('pointerdown', () => {
+    buzz(); key(b.dataset.key);
+    if (b.hasAttribute('data-repeat')) t = setTimeout(() => { r = setInterval(() => key(b.dataset.key), 140); }, 400);
+  });
+  const stop = () => { clearTimeout(t); clearInterval(r); };
+  b.addEventListener('pointerup', stop); b.addEventListener('pointerleave', stop); b.addEventListener('pointercancel', stop);
+});
+
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => { buzz(); post('action/' + c.dataset.action); }));
+
+// ---------- Tastatur ----------
+function sendText() { const v = $('#text').value; if (!v) return; post('text', v); $('#text').value = ''; }
+$('#send').addEventListener('click', sendText);
+$('#text').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if ($('#text').value) sendText(); else key(66); } });
+$('#del').addEventListener('click', () => { buzz(); key(67); });
+
+// ---------- Apps + Status ----------
+async function load() {
+  try {
+    const s = await (await fetch('/api/state')).json();
+    const ready = s.helper === 'bereit';
+    setOnline(ready, ready ? (s.name || 'verbunden') : s.helper);
+    $('#apps').innerHTML = s.apps.map(a =>
+      `<button class="app" data-pkg="${a.pkg}"><img loading="lazy" src="/api/icon/${a.pkg}.png" alt=""><span>${a.name}</span></button>`).join('');
+    document.querySelectorAll('.app').forEach(a => a.addEventListener('click', () => { buzz(); post('launch/' + a.dataset.pkg); }));
+    if (!ready) setTimeout(load, 3000);
+  } catch (e) { setOnline(false); setTimeout(load, 3000); }
+}
+load();
+if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js');
+
+// ---------- Hilfen ----------
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+const getJ = p => fetch('/api/' + p, { cache: 'no-store' }).then(r => r.json());
+const postJ = (p, body) => fetch('/api/' + p, { method: 'POST', body: body || '' }).then(r => r.json());
+const formBody = o => Object.entries(o).map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v)).join('&');
+const mb = n => n >= 1e9 ? (n / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(1, Math.round(n / 1e6)) + ' MB';
+
+// ---------- Reiter ----------
+function showTab(name) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  document.querySelectorAll('section[id^="tab-"]').forEach(s => s.hidden = s.id !== 'tab-' + name);
+  try { localStorage.setItem('tab', name); } catch (e) {}
+  if (name === 'media') loadMedia();
+  if (name === 'settings') loadSettings();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => { buzz(); showTab(b.dataset.tab); }));
+try { const t = localStorage.getItem('tab'); if (t && t !== 'remote') showTab(t); } catch (e) {}
+
+// Merkmal-Knöpfe (mehrere je Gruppe möglich)
+function tagsOf(root) { return [...root.querySelectorAll('.tag.on')].map(t => t.dataset.t).join(' '); }
+function setTags(root, s) { const on = new Set(String(s || '').split(/\s+/)); root.querySelectorAll('.tag').forEach(t => t.classList.toggle('on', on.has(t.dataset.t))); }
+document.querySelectorAll('.tag').forEach(t => t.addEventListener('click', () => { buzz(); t.classList.toggle('on'); }));
+
+// ---------- Medien ----------
+let picked = [];
+$('#pick').addEventListener('click', () => $('#files').click());
+$('#files').addEventListener('change', () => {
+  picked = [...$('#files').files];
+  if (!picked.length) return;
+  const total = picked.reduce((a, f) => a + f.size, 0);
+  $('#upTitle').textContent = (picked.length === 1 ? picked[0].name : picked.length + ' Dateien') + ' · ' + mb(total);
+  setTags($('#upCard'), '');
+  $('#upStatus').textContent = ''; $('#upBar').hidden = true; $('#upGo').disabled = false;
+  $('#upCard').hidden = false;
+  $('#upCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+function uploadOne(file, tags, onProgress) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', '/api/upload?' + formBody({ name: file.name, tags }));
+    x.upload.onprogress = e => e.lengthComputable && onProgress(e.loaded);
+    x.onload = () => { try { const j = JSON.parse(x.responseText); j.ok ? resolve(j) : reject(new Error(j.error || 'Fehler')); } catch (e) { reject(e); } };
+    x.onerror = () => reject(new Error('Verbindung abgebrochen'));
+    x.send(file);
+  });
+}
+
+$('#upGo').addEventListener('click', async () => {
+  if (!picked.length) return;
+  const tags = tagsOf($('#upCard'));
+  const total = picked.reduce((a, f) => a + f.size, 0);
+  let done = 0, ok = 0;
+  $('#upGo').disabled = true; $('#upBar').hidden = false;
+  const bar = $('#upBar i');
+  for (let i = 0; i < picked.length; i++) {
+    const f = picked[i];
+    $('#upStatus').textContent = (picked.length > 1 ? `${i + 1} von ${picked.length}: ` : '') + f.name;
+    try {
+      await uploadOne(f, tags, n => { bar.style.width = ((done + n) / total * 100).toFixed(1) + '%'; });
+      ok++;
+    } catch (e) { toast(f.name + ': ' + e.message); }
+    done += f.size;
+    bar.style.width = (done / total * 100).toFixed(1) + '%';
+  }
+  $('#upStatus').textContent = ok === picked.length ? (ok === 1 ? 'Fertig, läuft jetzt auf dem Beamer' : ok + ' Dateien hochgeladen') : ok + ' von ' + picked.length + ' hochgeladen';
+  $('#files').value = ''; picked = [];
+  setTimeout(() => { $('#upCard').hidden = true; }, 2200);
+  loadMedia();
+});
+
+let media = [];
+async function loadMedia() {
+  try {
+    const j = await getJ('media');
+    media = j.items;
+    $('#mediaGrid').innerHTML = media.map((m, i) => `
+      <button class="thumb" data-i="${i}">
+        <div class="img" style="background-image:url('/api/thumb/${encodeURIComponent(m.name)}?s=${m.size}')"></div>
+        <span class="kind">${m.video ? 'Video' : 'Foto'}</span>${m.playing ? '<span class="live">Läuft</span>' : ''}
+        <div class="meta">${esc(m.ort || m.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '))}<small>${esc(m.tags || 'jedes Wetter')}</small></div>
+      </button>`).join('') || '';
+    $('#mediaNote').textContent = media.length ? 'Frei auf dem Beamer: ' + mb(j.free) + '. Tippen für Details.' : '';
+    if (!media.length) $('#mediaGrid').innerHTML = '<div class="empty" style="grid-column:1/-1">Noch keine eigenen Fotos oder Videos.<br>Der Beamer zeigt die eingebauten Bilder.</div>';
+    document.querySelectorAll('.thumb').forEach(t => t.addEventListener('click', () => openSheet(media[+t.dataset.i])));
+  } catch (e) { $('#mediaNote').textContent = 'Medien lassen sich gerade nicht laden.'; }
+}
+
+let cur = null;
+function openSheet(m) {
+  cur = m; buzz();
+  $('#shPrev').style.backgroundImage = `url('/api/thumb/${encodeURIComponent(m.name)}?s=${m.size}')`;
+  $('#shName').textContent = m.name;
+  $('#shSub').textContent = (m.video ? 'Video' : 'Foto') + ' · ' + mb(m.size) + (m.playing ? ' · läuft gerade' : '');
+  setTags($('#sheet'), m.tags);
+  $('#sheet').hidden = false;
+}
+const closeSheet = () => { $('#sheet').hidden = true; cur = null; };
+$('#shClose').addEventListener('click', closeSheet);
+$('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) closeSheet(); });
+$('#shShow').addEventListener('click', async () => { if (!cur) return; buzz(); await postJ('media/show/' + encodeURIComponent(cur.name)); toast('Läuft jetzt auf dem Beamer'); closeSheet(); setTimeout(loadMedia, 800); });
+$('#shSave').addEventListener('click', async () => {
+  if (!cur) return; buzz();
+  const j = await postJ('media/meta/' + encodeURIComponent(cur.name), formBody({ ort: cur.ort || '', tags: tagsOf($('#sheet')) }));
+  toast(j.ok ? 'Gespeichert' : 'Speichern ging nicht'); closeSheet(); loadMedia();
+});
+$('#shDel').addEventListener('click', async () => {
+  if (!cur) return;
+  const b = $('#shDel');
+  if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Wirklich löschen?'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Löschen'; }, 3000); return; }
+  b.dataset.sure = ''; b.textContent = 'Löschen';
+  const j = await postJ('media/delete/' + encodeURIComponent(cur.name));
+  toast(j.ok ? 'Gelöscht' : 'Löschen ging nicht'); closeSheet(); loadMedia();
+});
+
+// ---------- Einstellungen ----------
+const PLACES = [['home', 'Startbildschirm'], ['window', 'Fenster-Modus'], ['dream', 'Bildschirmschoner']];
+let S = null;
+async function loadSettings() {
+  try { S = await getJ('settings'); } catch (e) { $('#ortNow').textContent = 'Beamer nicht erreichbar'; return; }
+  $('#ortNow').textContent = (S.ort ? S.ort + (S.ortFest ? '' : ' (automatisch)') : 'noch kein Ort') + (S.wetter ? ' · ' + S.wetter : '');
+  $('#wxPlaces').innerHTML = PLACES.map(([k, n]) => `
+    <div class="set" data-place="${k}">
+      <div class="txt"><b>${n}</b><span>${S.wx[k].show ? 'wird angezeigt' : 'aus'}</span></div>
+      <div class="screen${S.wx[k].show ? '' : ' off'}">${['tl', 'tr', 'bl', 'br'].map(p =>
+        `<button data-pos="${p}" class="${S.wx[k].pos === p ? 'on' : ''}" ${k === 'home' && p === 'bl' ? 'disabled' : ''} aria-label="${p}"></button>`).join('')}</div>
+      <label class="switch"><input type="checkbox" ${S.wx[k].show ? 'checked' : ''}><i></i></label>
+    </div>`).join('');
+  document.querySelectorAll('#wxPlaces .set').forEach(row => {
+    const k = row.dataset.place;
+    row.querySelector('input').addEventListener('change', async e => {
+      buzz(); await postJ('settings', formBody({ ['wxshow_' + k]: e.target.checked ? 1 : 0 })); loadSettings();
+    });
+    row.querySelectorAll('.screen button').forEach(b => b.addEventListener('click', async () => {
+      buzz(); row.querySelectorAll('.screen button').forEach(x => x.classList.toggle('on', x === b));
+      await postJ('settings', formBody({ ['wxpos_' + k]: b.dataset.pos }));
+    }));
+  });
+  $('#updVer').textContent = 'Installiert: Skyline ' + S.version;
+  $('#updAuto').checked = S.updAuto;
+  $('#updRepo').value = S.updRepo;
+  $('#updToken').placeholder = S.updToken ? 'gespeichert (leer lassen = behalten)' : 'github_pat_…';
+  $('#updStatus').textContent = S.updStatus || '';
+}
+
+async function searchOrt() {
+  const q = $('#ortQ').value.trim(); if (!q) return;
+  $('#ortRes').innerHTML = '<div class="note">Suche …</div>';
+  let r = [];
+  try { r = await getJ('geocode?q=' + encodeURIComponent(q)); } catch (e) {}
+  $('#ortRes').innerHTML = r.length ? r.map((o, i) => `<button data-i="${i}">${esc(o.name)}<small>${esc([o.region, o.land].filter(Boolean).join(', '))}</small></button>`).join('')
+    : '<div class="note">Nichts gefunden.</div>';
+  $('#ortRes').querySelectorAll('button').forEach(b => b.addEventListener('click', async () => {
+    const o = r[+b.dataset.i]; buzz();
+    await postJ(`location/${o.lat.toFixed(4)}/${o.lon.toFixed(4)}/${encodeURIComponent(o.name)}`);
+    $('#ortRes').innerHTML = ''; $('#ortQ').value = '';
+    toast('Ort: ' + o.name);
+    setTimeout(loadSettings, 2500);
+  }));
+}
+$('#ortGo').addEventListener('click', searchOrt);
+$('#ortQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchOrt(); } });
+$('#ortAuto').addEventListener('click', async () => { buzz(); await postJ('location/auto'); toast('Ort wird automatisch ermittelt'); setTimeout(loadSettings, 4000); });
+
+$('#updAuto').addEventListener('change', e => postJ('settings', formBody({ upd_auto: e.target.checked ? 1 : 0 })));
+$('#updSave').addEventListener('click', async () => {
+  const o = { upd_repo: $('#updRepo').value.trim() };
+  const t = $('#updToken').value.trim(); if (t) o.upd_token = t;
+  await postJ('settings', formBody(o)); $('#updToken').value = ''; toast('Quelle gespeichert'); loadSettings();
+});
+// In der Handy-App: Beamer neu suchen / wechseln
+if (window.Skyline && Skyline.search) { $('#switchCard').hidden = false; $('#switchBeamer').addEventListener('click', () => Skyline.search()); }
+
+let updPoll;
+$('#updCheck').addEventListener('click', async () => {
+  buzz(); await postJ('update/check');
+  clearInterval(updPoll); let n = 0;
+  updPoll = setInterval(async () => {
+    try { const s = await getJ('settings'); $('#updStatus').textContent = s.updStatus; $('#updVer').textContent = 'Installiert: Skyline ' + s.version; } catch (e) { $('#updStatus').textContent = 'Beamer startet neu …'; }
+    if (++n > 90) clearInterval(updPoll);
+  }, 1500);
+});
+</script>
+</body>
+</html>

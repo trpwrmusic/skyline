@@ -1,0 +1,23 @@
+# Große oder private Arbeitsdateien bleiben lokal
+/backup/
+/downloads/
+/entwuerfe/
+/shots/
+/videos/
+/wallpapers/
+
+# Build-Ergebnisse und Schlüssel
+build/
+*.apk
+*.idsig
+*.keystore
+!launcher/assets/remote/skyline-remote.apk
+__pycache__/
+
+# Nur lokal: einmalige Patch-Skripte, gerätespezifisches Backup/Restore, private Notizen
+/tools/patch_*.py
+/tools/commons*.py
+/tools/extract_banners.py
+/tools/render.py
+/restore.ps1
+/NOTIZEN.md

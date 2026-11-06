@@ -1,0 +1,64 @@
+# Bei jedem Push auf main: Skyline bauen, signieren und als GitHub-Release „build-<versionCode>“ veröffentlichen.
+# Der Beamer findet das Release beim nächsten Start (oder Aufwachen) und installiert es selbst.
+#
+# Secrets im Repository:
+#   SKYLINE_KEYSTORE        launcher/skyline.keystore, Base64-kodiert (gleicher Schlüssel wie bisher, sonst lehnt Android das Update ab)
+#   SKYLINE_KEYSTORE_PASS   Passwort des Keystores (optional, Standard: skyline)
+name: Skyline bauen und veröffentlichen
+
+on:
+  push:
+    branches: [main]
+    paths: ["launcher/**", "handy/**", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android-Werkzeuge
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;35.0.0" "platforms;android-34" > /dev/null
+
+      - name: Keystore
+        env:
+          KS: ${{ secrets.SKYLINE_KEYSTORE }}
+        run: |
+          if [ -z "$KS" ]; then echo "Secret SKYLINE_KEYSTORE fehlt" >&2; exit 1; fi
+          echo "$KS" | base64 -d > launcher/skyline.keystore
+
+      - name: Bauen
+        env:
+          KEYSTORE_PASS: ${{ secrets.SKYLINE_KEYSTORE_PASS }}
+        run: |
+          NAME=$(grep -o 'android:versionName="[^"]*"' launcher/AndroidManifest.xml | cut -d'"' -f2)
+          CODE=$((1000 + GITHUB_RUN_NUMBER))
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          KEYSTORE="$PWD/launcher/skyline.keystore" bash handy/build.sh      # Handy-App zuerst: landet in den Assets der Beamer-App
+          VERSION_CODE=$CODE VERSION_NAME="$NAME" bash launcher/build.sh
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git log -1 --pretty=%B > notes.txt
+          gh release create "build-$CODE" launcher/skyline.apk handy/skyline-remote.apk \
+            --title "Skyline $NAME (Build $CODE)" --notes-file notes.txt --target "$GITHUB_SHA"
+
+      - name: Keystore entfernen
+        if: always()
+        run: rm -f launcher/skyline.keystore
