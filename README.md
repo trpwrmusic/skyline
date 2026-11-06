@@ -45,9 +45,9 @@ Du brauchst einen PC mit [adb](https://developer.android.com/tools/releases/plat
 5. **Beim ersten Start** fragt der Beamer „USB-Debugging zulassen?“. Wähle „Immer zulassen“. Damit startet Skyline seinen
    Helfer für die Handy-Fernbedienung und die Updates. Netzwerk-Debugging muss dafür eingeschaltet bleiben.
 
-Danach blendet der Beamer die Adresse der Fernbedienung ein, z. B. `http://192.168.0.20:8080`. Öffne sie am Handy oder
-installiere über den Link unten auf der Seite die Android-App. Die App sucht den Beamer selbst, bei mehreren Beamern
-fragt sie nach. Bei einem iPhone die Seite im Browser „Zum Home-Bildschirm“ hinzufügen.
+**Fernbedienung:** Unter Android `skyline-remote.apk` aus dem Release installieren. Die App sucht den Beamer selbst im WLAN,
+bei mehreren Beamern fragt sie nach. Ohne App, etwa auf dem iPhone, öffnest du `http://<ip-des-beamers>:8080` im Browser
+und legst die Seite auf den Home-Bildschirm.
 
 **Hinweis:** Die Fernbedienung hat kein Passwort. Jeder im selben WLAN kann den Beamer steuern.
 

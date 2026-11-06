@@ -384,7 +384,6 @@ public class HomeActivity extends Activity {
         restoreDensity();
         final String upd = Updater.announce(this);
         if (upd != null) ui.postDelayed(new Runnable() { @Override public void run() { flash(upd, 6000); } }, 1500);
-        else remoteHint();
         stage.start();
         media.start();
         if (firstResume && dockRow.getChildCount() > 0) {
@@ -1181,22 +1180,5 @@ public class HomeActivity extends Activity {
         showHint(s);
         hint.removeCallbacks(clearFlash);
         hint.postDelayed(clearFlash, ms);
-    }
-
-    /** Solange noch nie ein Handy verbunden war: Adresse der Fernbedienung einblenden (keine feste IP, jeder Beamer anders). */
-    private void remoteHint() {
-        if (prefs.getBoolean("remote_seen", false)) return;
-        new Thread(new Runnable() {
-            @Override public void run() {
-                final String ip = RemoteService.lanAddress();
-                if (ip == null) return;
-                ui.postDelayed(new Runnable() {
-                    @Override public void run() {
-                        if (resumed && !prefs.getBoolean("remote_seen", false) && moving == null)
-                            flash("Mit dem Handy steuern: http://" + ip + ":" + RemoteService.HTTP_PORT + " im Browser öffnen (gleiches WLAN)", 15000);
-                    }
-                }, 2500);
-            }
-        }, "remote-hint").start();
     }
 }

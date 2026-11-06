@@ -285,7 +285,6 @@ public class RemoteService extends Service {
         String q = path.contains("?") ? path.substring(path.indexOf('?') + 1) : "";
         path = URLDecoder.decode(path.split("\\?")[0], "UTF-8");
         if (method.equals("GET") && (path.equals("/") || path.equals("/index.html"))) {
-            getSharedPreferences("skyline", MODE_PRIVATE).edit().putBoolean("remote_seen", true).apply();
             asset(out, "remote/index.html", "text/html; charset=utf-8");
             return;
         }
