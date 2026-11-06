@@ -37,7 +37,7 @@
     background: radial-gradient(120% 90% at 50% 0%, #22242a, var(--surface) 70%);
     box-shadow: 0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
   }
-  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); }
+  .seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); }
   .seg button { border: 0; border-radius: 10px; background: none; color: var(--muted); font: 600 14px/1 inherit; padding: 10px 0; }
   .seg button.on { background: var(--raised-on); color: var(--text); }
   .pad .hint { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-size: 13px; color: #6d6e76; pointer-events: none; }
@@ -53,21 +53,21 @@
   .pad .long { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; color: var(--text); opacity: 0; pointer-events: none; transition: opacity .15s; }
   .pad.holding .long { opacity: 1; }
 
-  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; justify-items: center; }
+  .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; justify-items: center; }
   .btn { width: 68px; height: 68px; border-radius: 50%; border: 0; background: var(--raised); color: var(--text);
     display: grid; place-items: center; box-shadow: 0 6px 14px rgba(0,0,0,.28); transition: transform .1s, background .1s; }
   .btn:active, .btn.on { background: var(--raised-on); transform: scale(.94); }
   .btn svg { width: 26px; height: 26px; fill: currentColor; }
 
   h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin: 28px 4px 10px; }
-  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .chip { border: 0; border-radius: 16px; background: var(--raised); color: var(--text); padding: 14px 8px; min-height: 64px;
     font: 500 13px/1.2 inherit; display: flex; flex-direction: column; align-items: center; gap: 7px; transition: transform .1s, background .1s; }
   .chip:active { background: var(--raised-on); transform: scale(.96); }
   .chip svg { width: 22px; height: 22px; fill: currentColor; }
 
-  .apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .app { border: 0; padding: 0; background: none; color: var(--text); text-align: center; font: 12px/1.25 inherit; }
+  .apps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .app { min-width: 0; border: 0; padding: 0; background: none; color: var(--text); text-align: center; font: 12px/1.25 inherit; }
   .app img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; display: block; background: var(--raised);
     box-shadow: 0 6px 14px rgba(0,0,0,.3); transition: transform .12s; }
   .app:active img { transform: scale(.95); }
@@ -82,7 +82,7 @@
   .note { font-size: 13px; color: var(--muted); margin: 10px 4px 0; }
 
   /* Reiter */
-  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: 14px; background: var(--surface);
+  .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: 14px; background: var(--surface);
     position: sticky; top: calc(env(safe-area-inset-top) + 6px); z-index: 5; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
   .tabs button { border: 0; border-radius: 10px; background: none; color: var(--muted); font: 600 14px/1 inherit; padding: 11px 0; }
   .tabs button.on { background: var(--raised-on); color: var(--text); }
@@ -108,8 +108,8 @@
   .ghost.danger { color: #ff6b61; }
   .bar { height: 6px; border-radius: 3px; background: var(--raised); overflow: hidden; margin-top: 10px; }
   .bar i { display: block; height: 100%; width: 0; background: var(--text); transition: width .2s; }
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 18px; }
-  .thumb { position: relative; border: 0; padding: 0; background: none; color: var(--text); text-align: left; font: 13px/1.25 inherit; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+  .thumb { position: relative; min-width: 0; border: 0; padding: 0; background: none; color: var(--text); text-align: left; font: 13px/1.25 inherit; }
   .thumb .img { aspect-ratio: 16 / 9; border-radius: 16px; background: var(--raised) center / cover no-repeat; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
   .thumb .meta { margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .thumb .meta small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
