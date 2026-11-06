@@ -6,8 +6,9 @@ Sollte auf jedem Android-TV-Gerät ab Android 9 laufen.
 
 ## Was Skyline kann
 
-- **Fenster mit Aussicht:** Videos oder Fotos als Hintergrund. Haben Videos Merkmale (Wetter, Tageszeit, Jahreszeit),
-  wählt Skyline alle 15 Minuten das passende zum echten Wetter (Open-Meteo, ohne Anmeldung).
+- **Eigene Bilder und Videos als Hintergrund:** Hochladen geht übers Handy. Sie laufen zufällig gemischt. Ohne eigene Motive
+  zeigt Skyline eingebaute Fotos von New York. Wer mag, gibt Motiven Merkmale wie „Regen“ oder „Nacht“ und stellt auf
+  „Nach Wetter“ um: Dann passt das Bild zum Wetter am eigenen Ort (Open-Meteo, ohne Anmeldung).
 - **Fenster-Modus:** Blendet alles aus, bis auf das Bild. Dazu kommen echte Fensterrahmen mit Sprossen in mehreren Rastern
   und Farben. Nach 2 Stunden ohne Tastendruck geht der Beamer schlafen.
 - **Bildschirmschoner:** Zeigt dasselbe Fenster.
@@ -51,9 +52,15 @@ fragt sie nach. Bei einem iPhone die Seite im Browser „Zum Home-Bildschirm“ 
 
 ## Eigene Videos und Fotos
 
-In der Fernbedienung unter **Medien** auf „Fotos oder Videos hinzufügen“ tippen und optional festlegen, wann es laufen soll,
-z. B. Regen, Nacht, Herbst. Querformat-Videos in 1080p (H.264) laufen am besten. Nahtlose Schleifen baut
-`tools/make_loop.sh` aus einem beliebigen Clip.
+In der Fernbedienung unter **Medien** auf „Fotos oder Videos hinzufügen“ tippen, auswählen, hochladen. Querformat-Videos in
+1080p (H.264) laufen am besten. Nahtlose Schleifen baut `tools/make_loop.sh` aus einem eigenen Clip.
+
+Unter **Einstellungen → Hintergrund** wählst du:
+- **Zufällig** (Standard): alle eigenen Motive gemischt.
+- **Nach Wetter:** Motive mit passenden Merkmalen haben Vorrang. Die Merkmale setzt du beim Hochladen oder später im Detailblatt
+  unter „Nur bei bestimmtem Wetter zeigen“ (Wetter, Tageszeit, Jahreszeit).
+
+Skyline liefert keine Videos mit. Was du hochlädst, bleibt auf deinem Beamer. Achte bei fremdem Material selbst auf die Rechte.
 
 Von Hand geht es auch: Dateien nach `/sdcard/Android/data/de.wesnik.skyline/files/videos/` bzw. `…/wallpapers/` legen,
 optional mit einer gleichnamigen `.txt` daneben (Zeile 1 Titel, Zeile 2 Nachweis, Zeile 3 Merkmale wie `schnee nacht winter`).
@@ -90,5 +97,5 @@ Aufbau in Kürze:
 
 ## Nachweise
 
-Die eingebauten Fotos stammen von Wikimedia Commons, die Nachweise stehen in `launcher/assets/wallpapers/captions.tsv`.
-Das Fensterfoto zeigt das Kloster Heiligengrabe, ebenfalls Wikimedia Commons. Die Wetterdaten kommen von [Open-Meteo](https://open-meteo.com).
+Die eingebauten Fotos und das Fensterfoto stammen von Wikimedia Commons und stehen unter CC BY-SA.
+Urheber, Lizenz und Quelle jedes Bildes stehen in [CREDITS.md](CREDITS.md). Die Wetterdaten kommen von [Open-Meteo](https://open-meteo.com).

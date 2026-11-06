@@ -494,6 +494,7 @@ public class RemoteService extends Service {
             Weather.Now n = Weather.get();
             org.json.JSONObject o = new org.json.JSONObject()
                     .put("wx", wx)
+                    .put("bgMode", Stage.mode(p))
                     .put("ort", p.getString("wx_ort", ""))
                     .put("ortFest", p.getBoolean("wx_fixed", false))
                     .put("wetter", n == null ? "" : (Double.isNaN(n.temp) ? "" : Math.round(n.temp) + "° · ") + Weather.describe(n.code))
@@ -513,6 +514,7 @@ public class RemoteService extends Service {
             if (k.matches("wxshow_(home|window|dream)")) e.putBoolean(k, v.equals("1") || v.equals("true"));
             else if (k.matches("wxpos_(home|window|dream)") && v.matches("tl|tr|bl|br")) e.putString(k, v);
             else if (k.equals("upd_auto")) e.putBoolean(k, v.equals("1") || v.equals("true"));
+            else if (k.equals("bg_mode") && v.matches("random|weather")) e.putString(k, v);
             else if (k.equals("upd_repo") && (v.isEmpty() || v.matches("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"))) e.putString(k, v);
             else if (k.equals("upd_token") && v.matches("[A-Za-z0-9_]*")) e.putString(k, v);
         }

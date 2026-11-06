@@ -181,6 +181,7 @@ public class Stage extends FrameLayout implements TextureView.SurfaceTextureList
             new android.content.SharedPreferences.OnSharedPreferenceChangeListener() {
                 @Override public void onSharedPreferenceChanged(android.content.SharedPreferences p, String k) {
                     if (k != null && k.startsWith("wx")) applyBadge();
+                    if ("bg_mode".equals(k) && running) { wxKey = null; choose(true); }   // Zufällig ↔ Nach Wetter: gleich umschalten
                 }
             };
 
@@ -342,12 +343,19 @@ public class Stage extends FrameLayout implements TextureView.SurfaceTextureList
         wx = n;
         badge.set(n);
         applyBadge();
-        if (!hasTags || n.key().equals(wxKey)) return;
+        if (!weatherMode() || !hasTags || n.key().equals(wxKey)) return;
         wxKey = n.key();
         playBest(false);
     }
 
-    private boolean useWeather() { return hasTags && wx != null; }
+    /** Hintergrund-Auswahl (Einstellungen): „random“ = eigene Motive zufällig gemischt (Standard), „weather“ = nach Merkmalen. */
+    static final String MODE_RANDOM = "random", MODE_WEATHER = "weather";
+
+    static String mode(android.content.SharedPreferences p) { return MODE_WEATHER.equals(p.getString("bg_mode", MODE_RANDOM)) ? MODE_WEATHER : MODE_RANDOM; }
+
+    private boolean weatherMode() { return MODE_WEATHER.equals(mode(prefs)); }
+
+    private boolean useWeather() { return weatherMode() && hasTags && wx != null; }
 
     /** Nächstes Motiv: nach Wetter, wenn Merkmale da sind, sonst der Reihe nach. */
     private void choose(boolean rotate) { if (useWeather()) playBest(rotate); else next(); }

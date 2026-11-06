@@ -155,6 +155,7 @@
   .row2 .field { flex: 1; min-width: 0; }
   .status-line { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 18px; }
   details summary { color: var(--muted); font-size: 13px; margin-top: 12px; cursor: pointer; }
+  details.wxd summary { font-size: 14px; color: var(--text); margin: 4px 0 2px; }
   .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg);
     font: 600 14px/1.2 inherit; padding: 12px 18px; border-radius: 999px; opacity: 0; transition: .25s; pointer-events: none; z-index: 30; max-width: 90vw; text-align: center; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -220,13 +221,15 @@
 
   <div class="card" id="upCard" hidden>
     <h3 id="upTitle">1 Datei</h3>
-    <p class="sub">Optional: Wann soll es laufen? Ohne Auswahl läuft es bei jedem Wetter.</p>
+    <details class="wxd" id="upWx"><summary>Nur bei bestimmtem Wetter zeigen</summary>
+    <p class="note" style="margin:8px 2px 0">Gilt, wenn unter Einstellungen „Nach Wetter“ gewählt ist.</p>
     <div class="lbl">Wetter</div>
     <div class="tags" data-group="wetter"><button class="tag" data-t="klar">Klar</button><button class="tag" data-t="wolkig">Wolkig</button><button class="tag" data-t="regen">Regen</button><button class="tag" data-t="schnee">Schnee</button></div>
     <div class="lbl">Tageszeit</div>
     <div class="tags" data-group="zeit"><button class="tag" data-t="tag">Tag</button><button class="tag" data-t="daemmerung">Dämmerung</button><button class="tag" data-t="nacht">Nacht</button></div>
     <div class="lbl">Jahreszeit</div>
     <div class="tags" data-group="saison"><button class="tag" data-t="fruehling">Frühling</button><button class="tag" data-t="sommer">Sommer</button><button class="tag" data-t="herbst">Herbst</button><button class="tag" data-t="winter">Winter</button></div>
+    </details>
     <button class="primary" id="upGo">Hochladen</button>
     <div class="bar" id="upBar" hidden><i></i></div>
     <div class="status-line" id="upStatus"></div>
@@ -241,19 +244,28 @@
     <div class="prev" id="shPrev"></div>
     <h3 id="shName" style="margin:0 0 2px;font-size:16px;word-break:break-all"></h3>
     <p class="sub" id="shSub" style="color:var(--muted);font-size:13px;margin:0 0 6px"></p>
+    <details class="wxd" id="shWx"><summary>Nur bei bestimmtem Wetter zeigen</summary>
     <div class="lbl">Wetter</div>
     <div class="tags" data-group="wetter"><button class="tag" data-t="klar">Klar</button><button class="tag" data-t="wolkig">Wolkig</button><button class="tag" data-t="regen">Regen</button><button class="tag" data-t="schnee">Schnee</button></div>
     <div class="lbl">Tageszeit</div>
     <div class="tags" data-group="zeit"><button class="tag" data-t="tag">Tag</button><button class="tag" data-t="daemmerung">Dämmerung</button><button class="tag" data-t="nacht">Nacht</button></div>
     <div class="lbl">Jahreszeit</div>
     <div class="tags" data-group="saison"><button class="tag" data-t="fruehling">Frühling</button><button class="tag" data-t="sommer">Sommer</button><button class="tag" data-t="herbst">Herbst</button><button class="tag" data-t="winter">Winter</button></div>
-    <div class="actions"><button class="ghost" id="shShow">Jetzt zeigen</button><button class="ghost" id="shSave">Speichern</button></div>
+    <button class="ghost" id="shSave" style="width:100%;margin-top:4px">Merkmale speichern</button>
+    </details>
+    <div class="actions"><button class="ghost" id="shShow">Jetzt zeigen</button></div>
     <div class="actions"><button class="ghost danger" id="shDel">Löschen</button><button class="ghost" id="shClose">Schließen</button></div>
   </div>
 </div>
 
 <!-- ---------- Einstellungen ---------- -->
 <section id="tab-settings" hidden>
+  <div class="card">
+    <h3>Hintergrund</h3>
+    <p class="sub" id="bgSub">…</p>
+    <div class="seg" style="margin:0"><button id="bgRandom">Zufällig</button><button id="bgWeather">Nach Wetter</button></div>
+  </div>
+
   <div class="card">
     <h3>Ort für das Wetter</h3>
     <p class="sub" id="ortNow">…</p>
@@ -498,6 +510,7 @@ $('#files').addEventListener('change', () => {
   const total = picked.reduce((a, f) => a + f.size, 0);
   $('#upTitle').textContent = (picked.length === 1 ? picked[0].name : picked.length + ' Dateien') + ' · ' + mb(total);
   setTags($('#upCard'), '');
+  $('#upWx').open = bgMode === 'weather';
   $('#upStatus').textContent = ''; $('#upBar').hidden = true; $('#upGo').disabled = false;
   $('#upCard').hidden = false;
   $('#upCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -537,8 +550,12 @@ $('#upGo').addEventListener('click', async () => {
   loadMedia();
 });
 
-let media = [];
+let media = [], bgMode = 'random';
+const TAGNAME = { klar: 'klar', wolkig: 'wolkig', regen: 'Regen', schnee: 'Schnee', tag: 'Tag', daemmerung: 'Dämmerung', nacht: 'Nacht',
+  fruehling: 'Frühling', sommer: 'Sommer', herbst: 'Herbst', winter: 'Winter' };
+const tagText = s => String(s || '').split(/\s+/).filter(Boolean).map(t => TAGNAME[t] || t).join(' · ');
 async function loadMedia() {
+  try { bgMode = (await getJ('settings')).bgMode || 'random'; } catch (e) {}
   try {
     const j = await getJ('media');
     media = j.items;
@@ -546,7 +563,7 @@ async function loadMedia() {
       <button class="thumb" data-i="${i}">
         <div class="img" style="background-image:url('/api/thumb/${encodeURIComponent(m.name)}?s=${m.size}')"></div>
         <span class="kind">${m.video ? 'Video' : 'Foto'}</span>${m.playing ? '<span class="live">Läuft</span>' : ''}
-        <div class="meta">${esc(m.ort || m.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '))}<small>${esc(m.tags || 'jedes Wetter')}</small></div>
+        <div class="meta">${esc(m.ort || m.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '))}<small>${esc(bgMode === 'weather' ? (tagText(m.tags) || 'jedes Wetter') : mb(m.size))}</small></div>
       </button>`).join('') || '';
     $('#mediaNote').textContent = media.length ? 'Frei auf dem Beamer: ' + mb(j.free) + '. Tippen für Details.' : '';
     if (!media.length) $('#mediaGrid').innerHTML = '<div class="empty" style="grid-column:1/-1">Noch keine eigenen Fotos oder Videos.<br>Der Beamer zeigt die eingebauten Bilder.</div>';
@@ -561,6 +578,7 @@ function openSheet(m) {
   $('#shName').textContent = m.name;
   $('#shSub').textContent = (m.video ? 'Video' : 'Foto') + ' · ' + mb(m.size) + (m.playing ? ' · läuft gerade' : '');
   setTags($('#sheet'), m.tags);
+  $('#shWx').open = bgMode === 'weather';
   $('#sheet').hidden = false;
 }
 const closeSheet = () => { $('#sheet').hidden = true; cur = null; };
@@ -586,6 +604,12 @@ const PLACES = [['home', 'Startbildschirm'], ['window', 'Fenster-Modus'], ['drea
 let S = null;
 async function loadSettings() {
   try { S = await getJ('settings'); } catch (e) { $('#ortNow').textContent = 'Beamer nicht erreichbar'; return; }
+  bgMode = S.bgMode || 'random';
+  $('#bgRandom').classList.toggle('on', bgMode === 'random');
+  $('#bgWeather').classList.toggle('on', bgMode === 'weather');
+  $('#bgSub').textContent = bgMode === 'weather'
+    ? 'Zeigt deine Bilder und Videos passend zu Wetter, Tageszeit und Jahreszeit. Was passt, legst du unter Medien bei jedem Motiv fest.'
+    : 'Zeigt deine Bilder und Videos zufällig gemischt. Ohne eigene Motive laufen die eingebauten Fotos.';
   $('#ortNow').textContent = (S.ort ? S.ort + (S.ortFest ? '' : ' (automatisch)') : 'noch kein Ort') + (S.wetter ? ' · ' + S.wetter : '');
   $('#wxPlaces').innerHTML = PLACES.map(([k, n]) => `
     <div class="set" data-place="${k}">
@@ -636,6 +660,11 @@ $('#updSave').addEventListener('click', async () => {
   const t = $('#updToken').value.trim(); if (t) o.upd_token = t;
   await postJ('settings', formBody(o)); $('#updToken').value = ''; toast('Quelle gespeichert'); loadSettings();
 });
+// Hintergrund: Zufällig oder Nach Wetter
+['random', 'weather'].forEach(m => $(m === 'random' ? '#bgRandom' : '#bgWeather').addEventListener('click', async () => {
+  buzz(); await postJ('settings', formBody({ bg_mode: m })); loadSettings();
+}));
+
 // In der Handy-App: Beamer neu suchen / wechseln
 if (window.Skyline && Skyline.search) { $('#switchCard').hidden = false; $('#switchBeamer').addEventListener('click', () => Skyline.search()); }
 
