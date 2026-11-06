@@ -31,12 +31,13 @@ Du brauchst einen PC mit [adb](https://developer.android.com/tools/releases/plat
    adb connect <ip-des-beamers>:5555
    adb install skyline.apk
    ```
-3. **Als Startbildschirm setzen:**
+3. **Als Startbildschirm setzen:** Android TV hält am Google-Launcher fest, solange er aktiv ist. Schalte ihn deshalb ab.
+   Er bleibt installiert und lässt sich jederzeit zurückholen:
    ```
-   adb shell cmd package set-home-activity de.wesnik.skyline/.HomeActivity
+   adb shell pm disable-user --user 0 com.google.android.tvlauncher
+   adb shell input keyevent KEYCODE_HOME
    ```
-   Kommt trotzdem der alte Launcher zurück, schalte ihn ab. Er bleibt installiert und lässt sich mit `pm enable` zurückholen:
-   `adb shell pm disable-user --user 0 com.google.android.tvlauncher`
+   Zurück zum Original: `adb shell pm enable com.google.android.tvlauncher`, danach Skyline deinstallieren.
 4. **Optional, als Bildschirmschoner:**
    ```
    adb shell settings put secure screensaver_components de.wesnik.skyline/.SkylineDream
