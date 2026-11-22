@@ -74,6 +74,8 @@ const S = {
   installing: {},          // id -> Fortschritt 0..1
   sockOwners: new Map(),
   booted: false,
+  update: null,            // neuestes Release: {available, code, name, notes, url, size}
+  upd: null,               // laufendes Update: {phase: 'download'|'installing'|'confirm', progress}
 };
 const store = {
   get(k, d) { try { const v = localStorage.getItem('hub.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -108,6 +110,7 @@ const Hub = window.Hub = {
   lifecycle(state) {
     for (const e of S.exts.values()) send(e, 'app', { state });
     if (state === 'resume' && S.catalogState === 'error') loadCatalog();
+    if (state === 'resume' && S.booted && !S.upd && Date.now() - store.get('updAt', 0) > 6 * 3600e3) checkUpdate(false);
   },
 };
 
@@ -117,6 +120,8 @@ function nativeEvent(m) {
     if (m.event === 'tcp.close') S.sockOwners.delete(m.sock);
     const e = S.exts.get(owner);
     if (e) send(e, m.event, { sock: m.sock, data: m.data, error: m.error || null });
+  } else if (m.event === 'app.update') {
+    updateEvent(m);
   } else if (m.event === 'exts.progress') {
     if (m.id && S.installing[m.id] !== undefined) { S.installing[m.id] = m.progress; paintProgress(m.id); }
   }
@@ -435,7 +440,7 @@ function renderHome() {
     <header class="head">
       <div><h1>${greeting()}</h1><p>${today()}</p></div>
       <button class="h-icon" data-settings aria-label="Einstellungen">${IC.gear}</button>
-    </header>${body}${sugg}`;
+    </header>${updateCardHtml()}${body}${sugg}`;
   if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; }
 }
 
@@ -677,7 +682,10 @@ function settingsHtml() {
     </div>
     <h2 class="h-section">Über</h2>
     <div class="group">
-      <div class="set"><span class="txt"><b>Skyline ${esc(S.info.version || '')}</b><span>${esc(S.info.device || '')} · Android-API ${esc(S.info.android || '')}</span></span></div>
+      <div class="set"><span class="txt"><b>Skyline ${esc(S.info.version || '')}</b><span>Build ${esc(S.info.versionCode || '')} · ${esc(S.info.device || '')}</span></span></div>
+      ${S.update?.available
+        ? `<div class="set"><span class="txt"><b>Neue Version: Build ${esc(S.update.code)}</b><span>${esc(S.update.notes || '')}</span></span><button class="h-btn small primary prog" data-act2="update" data-updbtn ${S.upd ? 'disabled' : ''}>${updLabel()}</button></div>`
+        : `<button class="set" data-act2="updcheck"><span class="txt"><b>Nach Updates suchen</b><span>${store.get('updAt', 0) ? 'Zuletzt geprüft ' + new Date(store.get('updAt', 0)).toLocaleString('de-DE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Prüft beim Start automatisch'}</span></span>${IC.refresh}</button>`}
       <button class="set" data-act2="source"><span class="txt"><b>Quellcode</b><span>github.com/trpwrmusic/skyline</span></span>${IC.chev}</button>
     </div>`;
 }
@@ -685,6 +693,8 @@ function settingsHtml() {
 async function pageAction(act, btn) {
   haptic('tick');
   if (act === 'catalog') return loadCatalog();
+  if (act === 'update') return runUpdate();
+  if (act === 'updcheck') return checkUpdate(true);
   if (act === 'devmode') { store.set('devmode', !store.get('devmode', false)); return renderPage(); }
   if (act === 'docs') return native('openUrl', { url: DOCS_URL });
   if (act === 'source') return native('openUrl', { url: 'https://github.com/trpwrmusic/skyline' });
@@ -732,6 +742,62 @@ async function pageAction(act, btn) {
     btn.disabled = false;
     btn.textContent = 'Laden';
   }
+}
+
+// ---------- Selbst-Update der App (GitHub-Releases) ----------
+async function checkUpdate(manual) {
+  try {
+    S.update = await native('app.update.check');
+    store.set('updAt', Date.now());
+    if (manual && !S.update.available) toast(`Skyline ist aktuell (Build ${S.info.versionCode})`);
+  } catch (err) {
+    if (manual) toast('Update-Prüfung ging nicht: ' + err.message, 'Erneut', () => checkUpdate(true));
+  }
+  renderAll();
+}
+
+async function runUpdate() {
+  if (!S.update?.available || S.upd) return;
+  haptic();
+  S.upd = { phase: 'download', progress: 0 };
+  renderAll();
+  try {
+    await native('app.update.install', { url: S.update.url });
+  } catch (err) {
+    S.upd = null;
+    renderAll();
+    toast('Update ging nicht: ' + err.message, 'Erneut', runUpdate);
+  }
+}
+
+function updateEvent(m) {
+  if (m.phase === 'download' || m.phase === 'installing' || m.phase === 'confirm') {
+    S.upd = { phase: m.phase, progress: m.progress || 0 };
+    if (m.phase === 'download') return paintUpdate();
+  } else if (m.phase === 'aborted') {
+    S.upd = null;
+    toast('Update abgebrochen. Die bisherige Version läuft weiter.');
+  } else if (m.phase === 'error') {
+    S.upd = null;
+    toast('Update ging nicht: ' + (m.error || 'unbekannter Fehler'), 'Erneut', runUpdate);
+  }
+  renderAll();
+}
+
+const updLabel = () => !S.upd ? 'Aktualisieren'
+  : S.upd.phase === 'download' ? `Lädt ${Math.round(S.upd.progress * 100)} %`
+  : S.upd.phase === 'installing' ? 'Installiert …' : 'Bitte bestätigen';
+function paintUpdate() {
+  document.querySelectorAll('[data-updbtn]').forEach(b => { b.textContent = updLabel(); b.style.setProperty('--p', Math.round((S.upd?.progress || 0) * 100) + '%'); });
+}
+function updateCardHtml() {
+  const u = S.update;
+  if (!u?.available) return '';
+  return `<div class="upd">
+    <span class="upd-ic">${IC.download}</span>
+    <span class="txt"><b>Neue App-Version</b><span>${esc(u.notes || u.name)}</span></span>
+    <button class="h-btn small primary prog" data-act2="update" data-updbtn ${S.upd ? 'disabled' : ''} style="--p:${Math.round((S.upd?.progress || 0) * 100)}%">${updLabel()}</button>
+  </div>`;
 }
 
 // ---------- Meldung ----------
@@ -819,6 +885,7 @@ window.HubBoot = async (token, info) => {
   S.booted = true;
   showView('home');
   setTimeout(loadCatalog, 1200);
+  setTimeout(() => checkUpdate(false), 2500);
 };
 
 // Erste Zeichnung, bevor Android den Schlüssel liefert

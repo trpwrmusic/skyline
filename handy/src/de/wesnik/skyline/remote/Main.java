@@ -58,6 +58,7 @@ public class Main extends Activity {
     final ExecutorService work = Executors.newCachedThreadPool();
     Net net;
     Exts exts;
+    AppUpdate update;
     private final String token = randomToken();
     private boolean booted;
     private String pendingLink;
@@ -74,6 +75,7 @@ public class Main extends Activity {
         net = new Net(this);
         exts = new Exts(this);
         exts.purgeTrash();
+        update = new AppUpdate(this);
 
         web = new WebView(this);
         web.setBackgroundColor(Color.rgb(13, 14, 17));
@@ -307,6 +309,15 @@ public class Main extends Activity {
                     case "http": net.http(id, a); return async();
                     case "net.scan": net.scan(id, a); return async();
                     case "net.mdns": net.mdns(id, a); return async();
+                    case "app.update.check": {
+                        work.execute(new Runnable() {
+                            @Override public void run() {
+                                try { reply(id, true, update.check(versionCode()), null); } catch (Exception e) { reply(id, false, null, msg(e)); }
+                            }
+                        });
+                        return async();
+                    }
+                    case "app.update.install": update.install(id, a.getString("url")); return async();
                     case "exts.installAsset":
                     case "exts.installUrl": {
                         work.execute(new Runnable() {

@@ -51,7 +51,8 @@ jobs:
           echo "NAME=$NAME" >> "$GITHUB_ENV"
           # Erweiterungen zeigen im Katalog auf die Dateien genau dieses Releases
           export RELEASE_BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/build-$CODE/"
-          KEYSTORE="$PWD/launcher/skyline.keystore" bash handy/build.sh      # Handy-App zuerst: landet in den Assets der Beamer-App
+          HNAME=$(grep -o 'android:versionName="[^"]*"' handy/AndroidManifest.xml | cut -d'"' -f2)
+          KEYSTORE="$PWD/launcher/skyline.keystore" VERSION_CODE=$CODE VERSION_NAME="$HNAME" bash handy/build.sh      # Handy-App zuerst: landet in den Assets der Beamer-App
           VERSION_CODE=$CODE VERSION_NAME="$NAME" bash launcher/build.sh
 
       - name: Release
