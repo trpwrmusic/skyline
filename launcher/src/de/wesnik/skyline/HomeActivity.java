@@ -200,6 +200,7 @@ public class HomeActivity extends Activity {
         sourceButton = addTopIcon(Glyphs.source(), "Quelle", new Runnable() { @Override public void run() { openSources(); } });
         addTopIcon(Glyphs.wifi(), "WLAN", new Intent(Settings.ACTION_WIFI_SETTINGS));
         addTopIcon(Glyphs.keystone(), "Trapezkorrektur", new Intent("com.xgimi.windowsystem.kst"));
+        phoneButton = addTopIcon(Glyphs.phone(), "Handy-App", new Runnable() { @Override public void run() { openPhone(); } });
         addTopIcon(Glyphs.gear(dp(1)), "Einstellungen", new Intent(Settings.ACTION_SETTINGS));
         // Fokus bleibt in der Knopfreihe; runter = zurück zur zuletzt gewählten App im Dock
         for (int i = 0; i < topIcons.getChildCount(); i++) {
@@ -394,7 +395,7 @@ public class HomeActivity extends Activity {
     }
 
     @Override protected void onPause() {
-        super.onPause(); resumed = false; closeSources(false); exitWindow(false); stage.stop(); media.stop(); endMove(); closeMenu(false);
+        super.onPause(); resumed = false; closeSources(false); closePhone(false); exitWindow(false); stage.stop(); media.stop(); endMove(); closeMenu(false);
         if (bigClock.getVisibility() == View.VISIBLE) {
             bigClock.setVisibility(View.GONE);
             ui.removeCallbacks(bigTick);
@@ -413,7 +414,7 @@ public class HomeActivity extends Activity {
         super.onNewIntent(i);
         endMove();
         closeMenu(false);
-        closeSources(false);
+        closeSources(false); closePhone(false);
         String act = i.getStringExtra(EXTRA_REMOTE);
         if (act != null) { remoteAction(act); return; }
         if (windowMode) { exitWindow(true); return; }
@@ -601,7 +602,7 @@ public class HomeActivity extends Activity {
     /** Aktionen von der Handy-Fernbedienung. */
     private void remoteAction(String a) {
         if (windowMode && !"window".equals(a)) exitWindow(false);
-        closeSources(false);
+        closeSources(false); closePhone(false);
         switch (a) {
             case "bigclock": if (bigClock.getVisibility() == View.VISIBLE) hideBigClock(); else showBigClock(); break;
             case "seconds": stage.toggleSeconds(); break;
@@ -794,6 +795,100 @@ public class HomeActivity extends Activity {
         } else if (e.getAction() == KeyEvent.ACTION_UP && (kc == KeyEvent.KEYCODE_BACK || kc == KeyEvent.KEYCODE_DPAD_UP || kc == KeyEvent.KEYCODE_DPAD_DOWN)) {
             closeSources(true);
         }
+        return true;
+    }
+
+    // ---------- Handy-App (Glasknopf „Handy-App“ oben): QR-Code zum Laden und Koppeln ----------
+    private IconButton phoneButton;
+    private GlassPanel phonePanel;
+    private ImageView phoneQr;
+    private TextView phoneAddr;
+    private boolean phoneOpen;
+
+    private void openPhone() {
+        if (phonePanel == null) {
+            phonePanel = new GlassPanel(this, dp(26));
+            phonePanel.attach(stage);
+            phonePanel.setElevation(dp(20));
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(18), dp(18), dp(26), dp(18));
+            phoneQr = new ImageView(this);
+            android.graphics.drawable.GradientDrawable qbg = new android.graphics.drawable.GradientDrawable();
+            qbg.setCornerRadius(dp(16));
+            qbg.setColor(0xFFFFFFFF);
+            phoneQr.setBackground(qbg);
+            phoneQr.setPadding(dp(10), dp(10), dp(10), dp(10));
+            row.addView(phoneQr, new LinearLayout.LayoutParams(dp(176), dp(176)));
+            LinearLayout col = new LinearLayout(this);
+            col.setOrientation(LinearLayout.VERTICAL);
+            col.setPadding(dp(22), 0, 0, 0);
+            TextView t = new TextView(this);
+            t.setText("Skyline aufs Handy");
+            t.setTextColor(0xFFFFFFFF);
+            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 21);
+            t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            col.addView(t);
+            TextView body = new TextView(this);
+            body.setText("Mit der Kamera des Handys scannen.\nDie Seite lädt die App und verbindet\nsie mit diesem Beamer.");
+            body.setTextColor(0xCCFFFFFF);
+            body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            body.setLineSpacing(0, 1.15f);
+            body.setPadding(0, dp(8), 0, 0);
+            col.addView(body);
+            phoneAddr = new TextView(this);
+            phoneAddr.setTextColor(0x99FFFFFF);
+            phoneAddr.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            phoneAddr.setPadding(0, dp(14), 0, 0);
+            col.addView(phoneAddr);
+            row.addView(col, new LinearLayout.LayoutParams(-2, -2));
+            phonePanel.addView(row, new FrameLayout.LayoutParams(-2, -2));
+            FrameLayout.LayoutParams pl = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
+            pl.rightMargin = dp(40);
+            pl.topMargin = dp(22 + 8 + 44 + 16);
+            stage.addForeground(phonePanel, pl);
+        }
+        String ip = RemoteService.lanAddress();
+        String url = ip == null ? null : "http://" + ip + ":" + RemoteService.HTTP_PORT + "/app";
+        phoneQr.setImageBitmap(url == null ? null : qr(url));
+        phoneAddr.setText(url == null ? "Kein WLAN verbunden" : ip + ":" + RemoteService.HTTP_PORT + "/app  ·  Zurück schließt");
+        phoneOpen = true;
+        phonePanel.bringToFront();
+        phonePanel.animate().cancel();
+        phonePanel.setVisibility(View.VISIBLE);
+        phonePanel.setAlpha(0f); phonePanel.setTranslationY(-dp(8));
+        phonePanel.animate().alpha(1f).translationY(0).setDuration(Stage.animationsEnabled(this) ? 180 : 0).start();
+    }
+
+    /** QR-Code als Bitmap, 6 px je Modul, schwarz auf transparent (weißer Grund kommt vom Hintergrund). */
+    private static android.graphics.Bitmap qr(String text) {
+        io.nayuki.qrcodegen.QrCode q = io.nayuki.qrcodegen.QrCode.encodeText(text, io.nayuki.qrcodegen.QrCode.Ecc.MEDIUM);
+        int n = q.size, s = 6;
+        int[] px = new int[n * s * n * s];
+        for (int y = 0; y < n * s; y++)
+            for (int x = 0; x < n * s; x++)
+                px[y * n * s + x] = q.getModule(x / s, y / s) ? 0xFF000000 : 0x00000000;
+        android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(px, n * s, n * s, android.graphics.Bitmap.Config.ARGB_8888);
+        return b;
+    }
+
+    private void closePhone(boolean refocus) {
+        if (!phoneOpen) return;
+        phoneOpen = false;
+        phonePanel.animate().cancel();
+        phonePanel.animate().alpha(0f).translationY(-dp(8)).setDuration(Stage.animationsEnabled(this) ? 140 : 0).withEndAction(new Runnable() {
+            @Override public void run() { if (!phoneOpen) phonePanel.setVisibility(View.GONE); }
+        }).start();
+        if (refocus && phoneButton != null) phoneButton.requestFocus();
+    }
+
+    /** Tasten, solange der QR-Code offen ist: Zurück, OK und Pfeile schließen. */
+    private boolean phoneKey(KeyEvent e) {
+        int kc = e.getKeyCode();
+        if (kc == KeyEvent.KEYCODE_HOME || kc == KeyEvent.KEYCODE_VOLUME_UP || kc == KeyEvent.KEYCODE_VOLUME_DOWN
+                || kc == KeyEvent.KEYCODE_VOLUME_MUTE || isMediaKey(kc)) return false;
+        if (e.getAction() == KeyEvent.ACTION_UP) closePhone(true);
         return true;
     }
 
@@ -1067,6 +1162,7 @@ public class HomeActivity extends Activity {
             return true;
         }
         if (srcOpen && sourceKey(e)) return true;
+        if (phoneOpen && phoneKey(e)) return true;
         if (bigClock != null && bigClock.getVisibility() == View.VISIBLE) {
             int kc = e.getKeyCode();
             boolean c = kc == KeyEvent.KEYCODE_DPAD_CENTER || kc == KeyEvent.KEYCODE_ENTER;

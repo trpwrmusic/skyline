@@ -1,7 +1,7 @@
 # Skyline
 
 Ein ruhiger Startbildschirm für Android-TV-Beamer: ein Fenster nach draußen, das zum Wetter passt, ein gläsernes App-Regal,
-die Uhr auf Atomzeit und eine Fernbedienung fürs Handy. Entwickelt und getestet auf dem XGIMI XK03H (Android TV 11).
+die Uhr auf Atomzeit und eine App fürs Handy, die Beamer, AV-Receiver und weitere Geräte an einem Ort steuert. Entwickelt und getestet auf dem XGIMI XK03H (Android TV 11).
 Sollte auf jedem Android-TV-Gerät ab Android 9 laufen.
 
 ## Was Skyline kann
@@ -17,8 +17,12 @@ Sollte auf jedem Android-TV-Gerät ab Android 9 laufen.
 - **Wetteranzeige:** Symbol, Temperatur und Ort. Für Startbildschirm, Fenster-Modus und Bildschirmschoner getrennt
   ein- und ausschaltbar, in einer Ecke deiner Wahl.
 - **App-Regal:** Lieblings-Apps zum Sortieren, dazu „Alle Apps“ und ein Medien-Dock für Spotify, YouTube Music und andere.
-- **Handy-Fernbedienung:** Touchpad, Maus-Modus, Tastatur, App-Start, eigene **Fotos und Videos hochladen**, Einstellungen.
-  Läuft im Browser oder als kleine Android-App, die den Beamer im WLAN selbst findet.
+- **Skyline-App fürs Handy:** Hub für Heimmedien mit Startseite, Leiste unten nach Material 3 und einem Store für
+  Erweiterungen. Mitgeliefert: **Skyline Beamer** (Touchpad, Maus-Modus, Tastatur, App-Start, eigene **Fotos und Videos
+  hochladen**, Einstellungen) und **Denon AVR** (Lautstärke, Eingänge, Klang, Einrichtung, 3D-Aufstellung der Lautsprecher).
+  Läuft auch ohne Beamer. Eigene Erweiterungen: siehe [EXTENSIONS.md](EXTENSIONS.md).
+- **Koppeln per QR-Code:** Der Glasknopf „Handy-App“ oben zeigt einen QR-Code. Die Handy-Kamera öffnet damit eine Seite des
+  Beamers, die die App lädt und sie mit diesem Beamer verbindet.
 - **Updates von selbst:** Neue Versionen erscheinen hier als Release. Der Beamer installiert sie beim Start oder Aufwachen.
 
 ## Installation
@@ -47,9 +51,14 @@ Du brauchst einen PC mit [adb](https://developer.android.com/tools/releases/plat
 5. **Beim ersten Start** fragt der Beamer „USB-Debugging zulassen?“. Wähle „Immer zulassen“. Damit startet Skyline seinen
    Helfer für die Handy-Fernbedienung und die Updates. Netzwerk-Debugging muss dafür eingeschaltet bleiben.
 
-**Fernbedienung:** Unter Android `skyline-remote.apk` aus dem Release installieren. Die App sucht den Beamer selbst im WLAN,
-bei mehreren Beamern fragt sie nach. Ohne App, etwa auf dem iPhone, öffnest du `http://<ip-des-beamers>:8080` im Browser
-und legst die Seite auf den Home-Bildschirm.
+**Handy-App:** Am Beamer oben auf „Handy-App“ gehen und den QR-Code mit der Handy-Kamera scannen. Die Seite lädt die App
+(`skyline-remote.apk`, liegt auch im Release) und verbindet sie danach per Knopfdruck mit dem Beamer. Ohne QR-Code sucht die
+App den Beamer selbst im WLAN, bei mehreren Beamern fragt sie nach. Ohne App, etwa auf dem iPhone, öffnest du
+`http://<ip-des-beamers>:8080` im Browser und legst die Seite auf den Home-Bildschirm.
+
+**Denon-Receiver:** In der App unter Store „Denon AVR“ hinzufügen. Die Erweiterung sucht Denon- und Marantz-Receiver im WLAN
+und spricht direkt per Telnet (Port 23) mit ihnen. Am Receiver muss unter Netzwerk die Netzwerksteuerung (IP Control) an sein.
+Der Receiver erlaubt nur eine Verbindung gleichzeitig; die App gibt sie frei, wenn sie in den Hintergrund geht.
 
 **Hinweis:** Die Fernbedienung hat kein Passwort. Jeder im selben WLAN kann den Beamer steuern.
 
@@ -80,11 +89,13 @@ Gebaut wird ohne Gradle, mit den Android-Build-Tools 35 und Plattform 34:
 ```
 launcher/build.sh      # Beamer-App   -> launcher/skyline.apk
 handy/build.sh         # Handy-App    -> launcher/assets/remote/skyline-remote.apk (liefert der Beamer aus)
+tools/pack_ext.py      # Erweiterungen aus extensions/ packen (läuft in handy/build.sh mit)
 ```
 
 Jeder Push auf `main` startet `.github/workflows/release.yml`. Der Workflow baut beide Apps und signiert sie mit dem
 Schlüssel aus den Secrets `SKYLINE_KEYSTORE` (Base64) und `SKYLINE_KEYSTORE_PASS`. Danach veröffentlicht er das Release
 `build-<versionCode>`. Die versionCode ist 1000 plus die Laufnummer, der Versionsname kommt aus `launcher/AndroidManifest.xml`.
+Zum Release gehören auch die Erweiterungen (`ext-<id>.zip`, `ext-<id>.svg`) und der Store-Katalog `extensions.json`.
 
 Aufbau in Kürze:
 
@@ -97,8 +108,14 @@ Aufbau in Kürze:
 | `Updater` | GitHub-Releases prüfen, laden, Signatur prüfen |
 | `Weather`, `WeatherBadge` | Wetter von Open-Meteo, Anzeige |
 | `Media` | Upload, Liste, Vorschaubilder |
+| `handy/src/…/Main` | Handy-App: WebView-Hülle, virtuelle Ursprünge `hub.local` und `<id>.ext.hub.local`, Brücke zu Android |
+| `handy/src/…/Net`, `Exts` | TCP, HTTP, Netzsuche, mDNS; Erweiterungen installieren, entfernen, wiederherstellen |
+| `handy/assets/shell` | Oberfläche der Handy-App (Startseite, Store, Einstellungen) und das SDK `sdk/hub.js`, `sdk/hub.css` |
+| `extensions/` | Erweiterungen, die mit der App kommen und im Store stehen (Skyline Beamer, Denon AVR) |
 
 ## Nachweise
 
 Die eingebauten Fotos und das Fensterfoto stammen von Wikimedia Commons und stehen unter CC BY-SA.
 Urheber, Lizenz und Quelle jedes Bildes stehen in [CREDITS.md](CREDITS.md). Die Wetterdaten kommen von [Open-Meteo](https://open-meteo.com).
+Der QR-Code am Beamer entsteht mit dem [QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) von Project Nayuki
+(MIT-Lizenz), die 3D-Aufstellung in der Denon-Erweiterung mit [three.js](https://threejs.org) (MIT-Lizenz).

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://hub.local/sdk/hub.css">
+<style>
+  body { padding: 18px; }
+  .list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .list div { background: var(--surface); border-radius: var(--r-m); padding: 14px 16px; }
+</style>
+</head>
+<body>
+  <h1 class="h-title">Hallo Welt</h1>
+  <p class="h-muted" style="margin:6px 0 18px">Geräte im WLAN mit offenem Port 80.</p>
+  <button class="h-btn primary wide" id="scan">Suchen</button>
+  <div class="list" id="list"></div>
+
+  <script src="http://hub.local/sdk/hub.js"></script>
+  <script>
+    const $ = s => document.querySelector(s);
+    let found = [];
+
+    function card() {
+      hub.home.set({
+        title: found.length ? found.length + ' Geräte gefunden' : 'Noch nicht gesucht',
+        subtitle: 'Webserver im eigenen WLAN',
+        actions: [{ id: 'scan', label: 'Suchen', primary: true }],
+      });
+    }
+
+    async function scan() {
+      $('#scan').disabled = true;
+      $('#scan').textContent = 'Sucht …';
+      try {
+        found = await hub.net.scan({ port: 80, timeout: 300 });
+        $('#list').innerHTML = found.map(h => `<div>${h.ip}</div>`).join('') || '<div>Nichts gefunden.</div>';
+        hub.ui.toast(found.length + ' Geräte gefunden');
+      } catch (e) {
+        hub.ui.toast('Suche ging nicht: ' + e.message);
+      }
+      $('#scan').disabled = false;
+      $('#scan').textContent = 'Erneut suchen';
+      card();
+    }
+
+    $('#scan').addEventListener('click', scan);
+    hub.on('home.action', ({ id }) => { if (id === 'scan') { hub.nav.open(); scan(); } });
+    hub.ready.then(card);
+  </script>
+</body>
+</html>

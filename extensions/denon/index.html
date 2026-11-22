@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Denon AVR</title>
+<link rel="stylesheet" href="http://hub.local/sdk/hub.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="hub.css">
+</head>
+<body>
+<div class="frame">
+  <header class="top">
+    <button class="who" id="conn" type="button">
+      <small id="connTitle">Receiver</small>
+      <b id="title">Denon</b>
+    </button>
+    <div class="top-right">
+      <button class="top-conn" id="connMobile" type="button"><span class="dot"></span><span id="connMobileText"></span></button>
+      <button class="power" id="power" type="button" aria-label="Ein/Standby">
+        <svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+      </button>
+    </div>
+  </header>
+  <nav class="side" id="nav">
+    <div class="nav-items">
+      <a href="#jetzt" data-view="jetzt"><span>Jetzt</span></a>
+      <a href="#einrichtung" data-view="einrichtung"><span>Einrichtung</span></a>
+      <a href="#lautsprecher" data-view="lautsprecher"><span>Lautsprecher</span></a>
+      <a href="#klang" data-view="klang"><span>Klang</span></a>
+    </div>
+  </nav>
+  <main class="main">
+    <span id="connSub" hidden></span>
+    <div id="view"></div>
+  </main>
+</div>
+
+<div class="sheet" id="settings" hidden>
+  <div class="sheet-card">
+    <h2>Receiver</h2>
+    <button class="btn primary" id="scanBtn" type="button">Im WLAN suchen</button>
+    <div class="found" id="found"></div>
+    <label class="field"><span>IP-Adresse</span><input id="host" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="z. B. 192.168.0.30"></label>
+    <label class="row-toggle"><span>Demo-Receiver statt echtem Gerät</span><button class="switch" id="demoSwitch" type="button" role="switch"></button></label>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="settingsCancel" type="button">Abbrechen</button>
+      <button class="btn primary" id="settingsSave" type="button">Verbinden</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script src="http://hub.local/sdk/hub.js"></script>
+<script src="conn.js"></script>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module" src="room3d.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

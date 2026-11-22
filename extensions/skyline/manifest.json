@@ -1,0 +1,17 @@
+{
+  "id": "skyline",
+  "name": "Skyline Beamer",
+  "version": "1.0.0",
+  "hub": 1,
+  "author": "Skyline",
+  "summary": "Fernbedienung, eigene Hintergründe und Einstellungen für Beamer mit Skyline.",
+  "description": "Steuert Beamer mit dem Skyline-Startbildschirm: Touchpad und Maus, Apps starten, Text eintippen, eigene Fotos und Videos als Hintergrund hochladen und das Wetter einstellen. Findet Beamer im WLAN von selbst; am Beamer lässt sich die App auch per QR-Code koppeln.",
+  "entry": "index.html",
+  "icon": "icon.svg",
+  "tab": { "label": "Beamer" },
+  "home": true,
+  "preinstall": true,
+  "featured": false,
+  "permissions": ["http", "scan", "mdns"],
+  "links": ["skyline://pair"]
+}

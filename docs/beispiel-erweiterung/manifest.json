@@ -1,0 +1,13 @@
+{
+  "id": "hallo",
+  "name": "Hallo Welt",
+  "version": "0.1.0",
+  "hub": 1,
+  "author": "Du",
+  "summary": "Beispiel: sucht Geräte mit offenem Port 80 und zeigt eine Karte auf der Startseite.",
+  "entry": "index.html",
+  "icon": "icon.svg",
+  "tab": { "label": "Hallo" },
+  "home": true,
+  "permissions": ["scan"]
+}

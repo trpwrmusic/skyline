@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0e11">
+<title>Skyline aufs Handy</title>
+<style>
+  :root { --bg: #0d0e11; --surface: #17181d; --surface-3: #2a2c33; --text: #f4f4f6; --muted: #9b9ca5; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, Roboto, sans-serif;
+    padding: calc(env(safe-area-inset-top) + 28px) 20px calc(env(safe-area-inset-bottom) + 32px); max-width: 520px; margin: 0 auto; }
+  .logo { width: 64px; height: 64px; border-radius: 18px; box-shadow: 0 10px 26px rgba(0,0,0,.4); }
+  h1 { font-size: 30px; line-height: 1.12; margin: 22px 0 8px; letter-spacing: -.02em; }
+  .lead { color: var(--muted); margin: 0 0 26px; }
+  .step { display: flex; gap: 16px; background: var(--surface); border-radius: 24px; padding: 18px; margin-top: 14px; box-shadow: 0 12px 30px -10px rgba(0,0,0,.6); }
+  .num { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-weight: 700; flex: none; }
+  .step h2 { font-size: 17px; margin: 4px 0 4px; }
+  .step p { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+  .btn { display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 999px; background: var(--surface-3); color: var(--text);
+    font-weight: 600; text-decoration: none; padding: 0 22px; }
+  .btn.primary { background: var(--text); color: var(--bg); }
+  .btn:active { transform: scale(.97); }
+  .alt { display: block; text-align: center; color: var(--muted); margin-top: 26px; font-size: 14px; }
+  .alt a { color: var(--text); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<img class="logo" src="/icon-192.png" alt="">
+<h1>Skyline aufs Handy</h1>
+<p class="lead" id="lead">Die App steuert diesen Beamer, lädt Fotos als Hintergrund hoch und verbindet weitere Geräte wie AV-Receiver.</p>
+
+<div id="android">
+  <div class="step">
+    <span class="num">1</span>
+    <div style="flex:1">
+      <h2>App installieren</h2>
+      <p>Android fragt beim ersten Mal, ob der Browser Apps installieren darf. Das einmal erlauben.</p>
+      <a class="btn primary" href="/skyline-remote.apk" download="skyline.apk">Skyline-App laden</a>
+    </div>
+  </div>
+  <div class="step">
+    <span class="num">2</span>
+    <div style="flex:1">
+      <h2>Mit diesem Beamer verbinden</h2>
+      <p id="pairText">Öffnet die App und merkt sich den Beamer.</p>
+      <a class="btn" id="pair" href="#">In der App verbinden</a>
+    </div>
+  </div>
+</div>
+
+<div id="other" hidden>
+  <div class="step">
+    <span class="num">1</span>
+    <div style="flex:1">
+      <h2>Im Browser steuern</h2>
+      <p>Die App gibt es für Android. Auf diesem Gerät läuft die Fernbedienung im Browser, auch als Symbol auf dem Home-Bildschirm.</p>
+      <a class="btn primary" href="/">Fernbedienung öffnen</a>
+    </div>
+  </div>
+</div>
+
+<p class="alt" id="altAndroid">Lieber ohne App? <a href="/">Im Browser steuern</a></p>
+
+<script>
+  const host = location.host;
+  const android = /Android/i.test(navigator.userAgent);
+  document.getElementById('android').hidden = !android;
+  document.getElementById('altAndroid').hidden = !android;
+  document.getElementById('other').hidden = android;
+  const pair = name => {
+    document.getElementById('pair').href = 'skyline://pair?host=' + encodeURIComponent(host) + '&name=' + encodeURIComponent(name);
+  };
+  pair('Beamer');
+  fetch('/api/state').then(r => r.json()).then(s => {
+    if (!s.name) return;
+    pair(s.name);
+    document.getElementById('pairText').textContent = 'Öffnet die App und merkt sich ' + s.name + '.';
+  }).catch(() => {});
+</script>
+</body>
+</html>

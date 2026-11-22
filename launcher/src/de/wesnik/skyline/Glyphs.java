@@ -114,6 +114,23 @@ final class Glyphs {
         };
     }
 
+    /** Handy-App: Telefon hochkant mit Lautsprecher-Schlitz. */
+    static Drawable phone() {
+        return new Base() {
+            @Override public void draw(Canvas c) {
+                Rect b = getBounds();
+                float s = Math.min(b.width(), b.height()), cx = b.centerX(), cy = b.centerY();
+                Paint st = new Paint(p);
+                st.setStyle(Paint.Style.STROKE);
+                st.setStrokeCap(Paint.Cap.ROUND);
+                st.setStrokeWidth(s * .1f);
+                float w = s * .5f, h = s * .84f;
+                c.drawRoundRect(new android.graphics.RectF(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2), s * .12f, s * .12f, st);
+                c.drawLine(cx - s * .07f, cy - h / 2 + s * .15f, cx + s * .07f, cy - h / 2 + s * .15f, st);
+            }
+        };
+    }
+
     /** Trapezkorrektur: hohler Trapez-Rahmen (schräge Projektionsfläche) mit Mittelpunkt-Kreuz. */
     static Drawable keystone() {
         return new Base() {

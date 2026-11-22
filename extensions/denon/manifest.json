@@ -1,0 +1,15 @@
+{
+  "id": "denon",
+  "name": "Denon AVR",
+  "version": "1.0.0",
+  "hub": 1,
+  "author": "Skyline",
+  "summary": "Lautstärke, Eingänge, Klang und Lautsprecher-Einrichtung für Denon-Receiver.",
+  "description": "Steuert Denon- und Marantz-Receiver direkt über das WLAN: Lautstärke, Eingang und Klangmodus, Audyssey und Klangregelung, Kanalpegel. Führt Schritt für Schritt durch die Einrichtung und plant die Aufstellung der Lautsprecher in einem 3D-Raum mit Abständen und Winkeln. Mit Demo-Receiver zum Ausprobieren ohne Gerät.",
+  "entry": "index.html",
+  "icon": "icon.svg",
+  "tab": { "label": "Denon" },
+  "home": true,
+  "featured": true,
+  "permissions": ["tcp", "http", "scan"]
+}

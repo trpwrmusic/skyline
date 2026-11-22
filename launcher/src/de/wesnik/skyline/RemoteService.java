@@ -217,6 +217,7 @@ public class RemoteService extends Service {
             }
             String[] p = reqLine.split(" ");
             String method = p[0], path = p.length > 1 ? p[1] : "/";
+            if (method.equals("OPTIONS")) { write(sock.getOutputStream(), 204, "text/plain", new byte[0]); return; }   // CORS-Vorabfrage der Handy-App
             if (method.equals("POST") && path.startsWith("/api/upload")) {   // Fotos/Videos: direkt in die Datei, nicht in den Speicher
                 sock.setSoTimeout(60000);
                 upload(in, len, path, ctype, sock.getOutputStream());
@@ -290,6 +291,7 @@ public class RemoteService extends Service {
         }
         if (method.equals("GET") && path.equals("/manifest.webmanifest")) { asset(out, "remote/manifest.webmanifest", "application/manifest+json"); return; }
         if (method.equals("GET") && path.equals("/sw.js")) { asset(out, "remote/sw.js", "text/javascript"); return; }
+        if (method.equals("GET") && path.equals("/app")) { asset(out, "remote/app.html", "text/html; charset=utf-8"); return; }
         if (method.equals("GET") && path.equals("/skyline-remote.apk")) { asset(out, "remote/skyline-remote.apk", "application/vnd.android.package-archive"); return; }
         if (method.equals("GET") && path.startsWith("/icon-")) { asset(out, "remote" + path, "image/png"); return; }
         if (method.equals("GET") && path.equals("/api/state")) { json(out, state()); return; }
@@ -594,8 +596,10 @@ public class RemoteService extends Service {
     private void json(OutputStream out, String s) throws Exception { write(out, 200, "application/json; charset=utf-8", s.getBytes("UTF-8")); }
 
     private static void write(OutputStream out, int code, String type, byte[] body) throws Exception {
-        String h = "HTTP/1.1 " + code + (code == 200 ? " OK" : code == 413 ? " Payload Too Large" : " Not Found") + "\r\nContent-Type: " + type
-                + "\r\nContent-Length: " + body.length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n";
+        // CORS offen: die Skyline-App lädt Fotos und Videos direkt aus ihrer Erweiterung hoch (eigener Ursprung)
+        String h = "HTTP/1.1 " + code + (code == 200 ? " OK" : code == 204 ? " No Content" : code == 413 ? " Payload Too Large" : " Not Found") + "\r\nContent-Type: " + type
+                + "\r\nContent-Length: " + body.length + "\r\nCache-Control: no-store\r\nConnection: close"
+                + "\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\nAccess-Control-Max-Age: 86400\r\n\r\n";
         out.write(h.getBytes("UTF-8"));
         out.write(body);
         out.flush();

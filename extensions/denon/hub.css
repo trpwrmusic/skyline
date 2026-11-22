@@ -1,0 +1,83 @@
+/* Anpassungen für die Skyline-App: Handy hochkant, die App hat ihre eigene Leiste unten. */
+body { font: 15px/1.45 var(--font); overscroll-behavior: none; }
+.frame, .frame { display: block !important; min-height: 100vh; }
+
+/* Kopf: Name des Receivers, Verbindung, Ein/Aus */
+.top { display: flex; align-items: center; gap: 12px; padding: 14px 18px 6px; margin: 0; }
+.who { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; flex: 1; text-align: left; padding: 4px 8px 4px 0; border-radius: 12px; }
+.who small { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.who b { font-size: 22px; font-weight: 700; letter-spacing: -.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.top-conn { display: inline-flex !important; background: var(--surface-2); box-shadow: none; height: 40px; padding: 0 14px; }
+.power { width: 46px; height: 46px; background: var(--surface-2); box-shadow: none; }
+.power.on { background: var(--text); color: var(--bg); }
+
+/* Bereiche als Reiter oben, die Leiste unten gehört der App */
+html body .side {
+  position: sticky !important; top: 0; inset: auto; z-index: 8; height: auto !important; display: block;
+  padding: 8px 18px 10px !important; background: var(--bg) !important; box-shadow: none !important;
+}
+html body .nav-items { flex-direction: row !important; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); }
+html body .nav-items a {
+  flex: 1 1 0 !important; flex-direction: row !important; justify-content: center; min-width: 0; height: 40px; padding: 0 4px !important; border-radius: 999px;
+  font-size: 13.5px !important; font-weight: 600; color: var(--muted); box-shadow: none !important; background: transparent;
+}
+html body .nav-items a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html body .nav-items a.on { background: var(--surface-3) !important; color: var(--text); }
+.main { padding: 8px 18px 40px !important; max-width: 640px; margin: 0 auto; }
+
+/* Jetzt: ruhiger, ohne Blauverlauf */
+.hero { padding: 22px !important; border-radius: 28px; color: var(--text);
+  background: radial-gradient(120% 90% at 100% 0%, rgba(157, 184, 255, .18), transparent 60%), var(--surface) !important; box-shadow: var(--shadow); }
+.hero .now small { color: var(--muted); opacity: 1; }
+.hero .now h2 { font-size: 32px !important; }
+.hero .now .mode { background: var(--surface-3); color: var(--text); }
+.vol-num b { font-size: 56px !important; }
+.vol-num span { color: var(--muted); opacity: 1; }
+.round { background: var(--surface-3); color: var(--text); width: 48px; height: 48px; }
+.round:active { background: var(--surface-4); }
+.round.on { background: var(--text); color: var(--bg); }
+.vol-ctl input[type=range]::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--text) var(--p), var(--surface-4) var(--p)) !important; }
+.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px; }
+.tile { padding: 14px 12px; gap: 14px; font-size: 13.5px; border-radius: 18px; min-width: 0; }
+.tile.on { background: var(--text); color: var(--bg); }
+.tile.on svg { color: var(--bg); }
+.seg { background: var(--surface); border-radius: 18px; }
+.seg button.on { background: var(--surface-3); box-shadow: none; }
+.section-title { font-size: 19px; margin: 28px 2px 12px; }
+.btn.primary { background: var(--text); color: var(--bg); }
+.btn { background: var(--surface-3); min-height: 44px; }
+.btn.ghost { background: transparent; }
+.card { border-radius: 24px; padding: 20px; }
+.switch.on { background: var(--accent); }
+
+/* Einrichtung */
+.step-body { padding: 0 18px 18px !important; }
+.dpad { width: 230px; height: 230px; }
+
+/* Lautsprecher */
+.stage .room3d { height: 58vh !important; min-height: 360px !important; border-radius: 24px; }
+.inspector { left: 10px !important; right: 10px !important; bottom: 10px !important; width: auto !important; }
+.stage-bar.bottom-left { top: 60px !important; bottom: auto !important; }
+.mode-tabs { display: flex !important; }
+.mode-tabs button { flex: 1 !important; }
+
+/* Verbindung und Suche */
+.sheet { align-items: end !important; padding: 0 !important; backdrop-filter: none; background: rgba(0, 0, 0, .55); }
+.sheet-card { width: 100% !important; border-radius: 28px 28px 0 0 !important; padding: 22px 18px 22px !important; gap: 14px !important; animation: up .25s cubic-bezier(.2, .8, .2, 1); }
+@keyframes up { from { transform: translateY(40px); } }
+.field input { height: 52px; border-radius: 16px; border: 0; background: var(--surface-2); color: var(--text); padding: 0 16px; font: 16px var(--font); outline: none; }
+.field input:focus { box-shadow: 0 0 0 2px var(--accent) inset; }
+.found { display: flex; flex-direction: column; gap: 8px; }
+.found:empty { display: none; }
+.found button { display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px 16px; border-radius: 18px; background: var(--surface-2); font-weight: 600; font-size: 16px; }
+.found button small { display: block; color: var(--muted); font-weight: 400; font-size: 13px; margin-top: 2px; }
+.found p { color: var(--muted); font-size: 14px; margin: 0; text-align: center; }
+.toast { left: 16px !important; right: 16px !important; transform: none !important; bottom: 20px !important; background: #e8e9ee !important; color: #15161a !important; border-radius: 14px !important; }
+.empty .btn { flex: 1 1 auto; }
+
+/* Feinschliff */
+::-webkit-scrollbar { display: none; }
+html { scrollbar-width: none; }
+html body .nav-items a { flex: 1 1 auto !important; padding: 0 10px !important; }
+.card.step { padding: 0 !important; }
+.power[hidden] { display: none !important; }

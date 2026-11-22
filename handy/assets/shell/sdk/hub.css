@@ -1,0 +1,101 @@
+/*
+ * Skyline Hub: gemeinsame Gestaltung für die App und ihre Erweiterungen.
+ * Einbinden mit <link rel="stylesheet" href="http://hub.local/sdk/hub.css">.
+ * Alles hängt an den Variablen unten; eigene Erweiterungen sollten sie verwenden, damit die App wie aus einem Guss wirkt.
+ */
+:root {
+  --bg: #0d0e11;
+  --surface: #17181d;
+  --surface-2: #1f2127;
+  --surface-3: #2a2c33;
+  --surface-4: #353841;
+  --text: #f4f4f6;
+  --muted: #9b9ca5;
+  --faint: #63656d;
+  --accent: #9db8ff;
+  --accent-soft: rgba(157, 184, 255, .15);
+  --on-accent: #0d1426;
+  --ok: #5ad08f;
+  --ok-soft: rgba(90, 208, 143, .14);
+  --warn: #ffb547;
+  --warn-soft: rgba(255, 181, 71, .14);
+  --bad: #ff6b61;
+  --bad-soft: rgba(255, 107, 97, .14);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 12px 30px -10px rgba(0, 0, 0, .6);
+  --shadow-lift: 0 2px 8px rgba(0, 0, 0, .45), 0 24px 50px -16px rgba(0, 0, 0, .75);
+  --r: 24px;
+  --r-m: 18px;
+  --r-s: 12px;
+  --pad: 18px;
+  --font: system-ui, -apple-system, "Roboto", "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 16px/1.4 var(--font); -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
+input, textarea { user-select: text; -webkit-user-select: text; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+svg { flex: none; }
+h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: -.01em; }
+p { margin: 0; }
+
+/* Knöpfe */
+.h-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 999px;
+  background: var(--surface-3); color: var(--text); font-weight: 600; font-size: 15px; transition: transform .12s, background .15s, opacity .15s; white-space: nowrap; }
+.h-btn:active { transform: scale(.96); background: var(--surface-4); }
+.h-btn.primary { background: var(--text); color: var(--bg); }
+.h-btn.primary:active { background: #d9dae0; }
+.h-btn.small { height: 38px; padding: 0 16px; font-size: 14px; }
+.h-btn.wide { width: 100%; }
+.h-btn.danger { color: var(--bad); }
+.h-btn:disabled { opacity: .45; pointer-events: none; }
+.h-btn svg { width: 20px; height: 20px; }
+.h-round { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-3); color: var(--text);
+  transition: transform .12s, background .15s; }
+.h-round:active { transform: scale(.92); background: var(--surface-4); }
+.h-round.on { background: var(--text); color: var(--bg); }
+.h-round svg { width: 24px; height: 24px; }
+.h-icon { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--text); }
+.h-icon:active { background: var(--surface-3); }
+.h-icon svg { width: 24px; height: 24px; }
+
+/* Karten und Gruppen: Abstand statt Linien */
+.h-card { background: var(--surface); border-radius: var(--r); padding: var(--pad); box-shadow: var(--shadow); }
+.h-title { font-size: 28px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+.h-section { font-size: 19px; font-weight: 650; margin: 30px 2px 12px; }
+.h-muted { color: var(--muted); }
+.h-small { font-size: 13.5px; }
+
+/* Umschalter */
+.h-switch { position: relative; width: 52px; height: 32px; border-radius: 16px; background: var(--surface-4); flex: none; transition: background .2s; }
+.h-switch::after { content: ""; position: absolute; left: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s, width .2s; }
+.h-switch.on { background: var(--accent); }
+.h-switch.on::after { transform: translateX(20px); background: var(--on-accent); }
+
+/* Segmente */
+.h-seg { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); }
+.h-seg button { flex: 1; height: 40px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 14px; white-space: nowrap; padding: 0 12px; }
+.h-seg button.on { background: var(--surface-3); color: var(--text); }
+
+/* Eingabe */
+.h-field { display: block; width: 100%; height: 52px; border-radius: 16px; border: 0; background: var(--surface-2); color: var(--text); padding: 0 16px;
+  font: 16px var(--font); outline: none; }
+.h-field:focus { background: var(--surface-3); box-shadow: 0 0 0 2px var(--accent) inset; }
+.h-label { display: block; font-size: 13px; color: var(--muted); margin: 0 4px 6px; }
+
+/* Status-Pille (getönt) */
+.h-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  background: var(--surface-3); color: var(--muted); white-space: nowrap; }
+.h-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.h-pill.ok { background: var(--ok-soft); color: var(--ok); }
+.h-pill.warn { background: var(--warn-soft); color: var(--warn); }
+.h-pill.bad { background: var(--bad-soft); color: var(--bad); }
+.h-pill.plain::before { display: none; }
+
+/* Ladeanzeige */
+.h-spin { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--surface-4); border-top-color: var(--text); animation: h-spin .9s linear infinite; }
+@keyframes h-spin { to { transform: rotate(360deg); } }
+.h-skel { background: linear-gradient(90deg, var(--surface-2), var(--surface-3), var(--surface-2)); background-size: 200% 100%; animation: h-skel 1.4s ease infinite; border-radius: 8px; }
+@keyframes h-skel { to { background-position: -200% 0; } }
+
+@media (prefers-reduced-motion: reduce) { * { animation-duration: .001s !important; transition-duration: .001s !important; } }

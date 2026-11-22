@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>Skyline</title>
+<link rel="stylesheet" href="/sdk/hub.css">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+  <main class="views" id="views">
+    <section class="view scroll" id="v-home" data-view="home"></section>
+    <section class="view scroll" id="v-store" data-view="store"></section>
+    <div id="frames"></div>
+    <section class="view scroll page" id="v-page" hidden></section>
+  </main>
+  <nav class="navbar" id="navbar" aria-label="Bereiche"></nav>
+</div>
+<div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button id="toastAction" hidden></button></div>
+<script src="/app.js"></script>
+</body>
+</html>

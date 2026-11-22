@@ -1,27 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.wesnik.skyline.remote"
-    android:versionCode="2"
-    android:versionName="2.0">
-    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
+    android:versionCode="3"
+    android:versionName="3.0">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <application
         android:label="Skyline"
         android:icon="@drawable/icon"
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"
         android:theme="@style/App">
         <activity
             android:name=".Main"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode">
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Koppeln über den QR-Code am Beamer: skyline://pair?host=192.168.0.20:8080&name=… -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="skyline" />
             </intent-filter>
         </activity>
     </application>

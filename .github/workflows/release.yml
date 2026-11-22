@@ -1,5 +1,6 @@
 # Bei jedem Push auf main: Skyline bauen, signieren und als GitHub-Release „build-<versionCode>“ veröffentlichen.
 # Der Beamer findet das Release beim nächsten Start (oder Aufwachen) und installiert es selbst.
+# Die Handy-App liest den Store-Katalog dist/extensions.json aus dem neuesten Release (…/releases/latest/download/).
 #
 # Secrets im Repository:
 #   SKYLINE_KEYSTORE        launcher/skyline.keystore, Base64-kodiert (gleicher Schlüssel wie bisher, sonst lehnt Android das Update ab)
@@ -9,7 +10,7 @@ name: Skyline bauen und veröffentlichen
 on:
   push:
     branches: [main]
-    paths: ["launcher/**", "handy/**", ".github/workflows/release.yml"]
+    paths: ["launcher/**", "handy/**", "extensions/**", "tools/pack_ext.py", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 permissions:
@@ -48,6 +49,8 @@ jobs:
           CODE=$((1000 + GITHUB_RUN_NUMBER))
           echo "CODE=$CODE" >> "$GITHUB_ENV"
           echo "NAME=$NAME" >> "$GITHUB_ENV"
+          # Erweiterungen zeigen im Katalog auf die Dateien genau dieses Releases
+          export RELEASE_BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/build-$CODE/"
           KEYSTORE="$PWD/launcher/skyline.keystore" bash handy/build.sh      # Handy-App zuerst: landet in den Assets der Beamer-App
           VERSION_CODE=$CODE VERSION_NAME="$NAME" bash launcher/build.sh
 
@@ -56,7 +59,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git log -1 --pretty=%B > notes.txt
-          gh release create "build-$CODE" launcher/skyline.apk handy/skyline-remote.apk \
+          gh release create "build-$CODE" launcher/skyline.apk handy/skyline-remote.apk dist/extensions.json dist/ext-*.zip dist/ext-*.svg \
             --title "Skyline $NAME (Build $CODE)" --notes-file notes.txt --target "$GITHUB_SHA"
 
       - name: Keystore entfernen

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.wesnik.skyline"
     android:versionCode="27"
-    android:versionName="4.3.1">
+    android:versionName="4.4">
 
     <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="30" />
 

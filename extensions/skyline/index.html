@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Skyline Beamer</title>
+<link rel="stylesheet" href="http://hub.local/sdk/hub.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <button class="devbtn" id="devBtn" aria-label="Beamer wählen">
+    <span class="dtxt"><small>Beamer</small><b id="devName">Suche …</b></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <span class="h-pill" id="pill">verbinde</span>
+</header>
+
+<!-- ---------- Kein Beamer verbunden ---------- -->
+<section id="none" hidden>
+  <div class="hero">
+    <div class="hero-img"></div>
+    <div class="hero-txt">
+      <h1 id="noneTitle">Beamer verbinden</h1>
+      <p id="noneText">Die App sucht im WLAN nach Beamern mit Skyline.</p>
+    </div>
+  </div>
+  <button class="h-btn primary wide" id="searchBtn">Im WLAN suchen</button>
+  <div class="status-line" id="searchStatus"></div>
+  <div class="results" id="found"></div>
+  <details class="manual"><summary>Adresse selbst eingeben</summary>
+    <div class="row2"><input class="h-field" id="hostIn" placeholder="z. B. 192.168.0.20" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false"><button class="h-btn" id="hostGo">Verbinden</button></div>
+    <p class="note">Die Adresse steht am Beamer unter dem Knopf „Handy-App“ oben rechts.</p>
+  </details>
+</section>
+
+<div id="main" hidden>
+<nav class="h-seg tabs"><button data-tab="remote" class="on">Steuern</button><button data-tab="media">Medien</button><button data-tab="settings">Einstellungen</button></nav>
+
+<section id="tab-remote">
+<div class="h-seg mode" role="tablist"><button id="modeKeys" class="on">Pfeile</button><button id="modeMouse">Maus</button></div>
+<div class="pad" id="pad">
+  <div class="edge up"></div><div class="edge down"></div><div class="edge left"></div><div class="edge right"></div>
+  <div class="touch" id="touch"></div>
+  <div class="long">Lang gedrückt</div>
+  <div class="hint" id="padHint">Wischen · Tippen = OK · Halten = lang OK</div>
+</div>
+
+<div class="row">
+  <button class="btn" data-key="4" aria-label="Zurück"><svg viewBox="0 0 24 24"><path d="M11.7 4.3a1 1 0 010 1.4L6.4 11H20a1 1 0 110 2H6.4l5.3 5.3a1 1 0 01-1.4 1.4l-7-7a1 1 0 010-1.4l7-7a1 1 0 011.4 0z"/></svg></button>
+  <button class="btn" data-key="3" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M11.3 3.3a1 1 0 011.4 0l8 7.5a1 1 0 01-.7 1.7H19V20a1 1 0 01-1 1h-4v-6h-4v6H6a1 1 0 01-1-1v-7.5H4a1 1 0 01-.7-1.7z"/></svg></button>
+  <button class="btn" data-key="85" aria-label="Wiedergabe/Pause"><svg viewBox="0 0 24 24"><path d="M3 5.5a1 1 0 011.5-.9l8 5.5a1 1 0 010 1.7l-8 5.5A1 1 0 013 16.4zM15 5h2v14h-2zm4 0h2v14h-2z"/></svg></button>
+  <button class="btn" data-key="25" data-repeat aria-label="Leiser"><svg viewBox="0 0 24 24"><path d="M4 9h3l5-4v14l-5-4H4a1 1 0 01-1-1v-4a1 1 0 011-1zm11 2h6v2h-6z"/></svg></button>
+  <button class="btn" data-key="164" aria-label="Stumm"><svg viewBox="0 0 24 24"><path d="M4 9h3l5-4v14l-5-4H4a1 1 0 01-1-1v-4a1 1 0 011-1zm12.3-.7l1.7 1.7 1.7-1.7 1.4 1.4-1.7 1.7 1.7 1.7-1.4 1.4-1.7-1.7-1.7 1.7-1.4-1.4 1.7-1.7-1.7-1.7z"/></svg></button>
+  <button class="btn" data-key="24" data-repeat aria-label="Lauter"><svg viewBox="0 0 24 24"><path d="M4 9h3l5-4v14l-5-4H4a1 1 0 01-1-1v-4a1 1 0 011-1zm13-1h2v3h3v2h-3v3h-2v-3h-3v-2h3z"/></svg></button>
+</div>
+
+<h2>Schnell</h2>
+<div class="chips">
+  <button class="chip" data-action="keystone"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M2 5h20l-3.5 14h-13zm3 2l2.6 10h8.8L19 7z"/></svg>Trapez</button>
+  <button class="chip" data-action="window"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3 9V5h4M17 5h4v4M21 15v4h-4M7 19H3v-4"/></svg>Fenster</button>
+  <button class="chip" data-action="bigclock"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 110 20 10 10 0 010-20zm0 2a8 8 0 100 16 8 8 0 000-16zm1 3v4.6l3.2 1.9-1 1.7L11 12.7V7z"/></svg>Große Uhr</button>
+  <button class="chip" data-action="seconds"><svg viewBox="0 0 24 24"><path d="M9 2h6v2H9zm3 3a8 8 0 110 16 8 8 0 010-16zm0 2a6 6 0 100 12 6 6 0 000-12zm-1 2h2v4h-2z"/></svg>Sekunden</button>
+  <button class="chip" data-action="nextvideo"><svg viewBox="0 0 24 24"><path d="M3 6a2 2 0 012-2h10a2 2 0 012 2v3l4-2.5v11L17 15v3a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Video</button>
+  <button class="chip" data-action="wifi"><svg viewBox="0 0 24 24"><path d="M12 18.5a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6zM2.1 8.6a14 14 0 0119.8 0l-1.4 1.4a12 12 0 00-17 0zm3.5 3.5a9 9 0 0112.8 0L17 13.5a7 7 0 00-10 0zm3.5 3.5a4 4 0 015.8 0L13.5 17a2 2 0 00-3 0z"/></svg>WLAN</button>
+  <button class="chip" data-action="settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 000-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 00-1.7-1L15 3h-4l-.4 2.7a7.4 7.4 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 000 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 001.7 1L11 21h4l.4-2.7a7.4 7.4 0 001.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1116.5 12 3.5 3.5 0 0113 15.5z"/></svg>Einstellungen</button>
+</div>
+
+<h2>Tastatur</h2>
+<div class="kbd">
+  <input id="text" placeholder="Text eintippen …" autocomplete="off" autocapitalize="off" enterkeyhint="send">
+  <button id="del" aria-label="Löschen">⌫</button>
+  <button id="send">Senden</button>
+</div>
+<p class="note">Erst am Beamer ein Suchfeld auswählen, dann hier tippen.</p>
+
+<h2>Apps</h2>
+<div class="apps" id="apps"></div>
+</section>
+
+<!-- ---------- Medien: eigene Fotos und Videos für den Hintergrund ---------- -->
+<section id="tab-media" hidden>
+  <button class="add" id="pick"><svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>Fotos oder Videos hinzufügen</button>
+  <input type="file" id="files" accept="image/*,video/*" multiple hidden>
+
+  <div class="card" id="upCard" hidden>
+    <h3 id="upTitle">1 Datei</h3>
+    <details class="wxd" id="upWx"><summary>Nur bei bestimmtem Wetter zeigen</summary>
+    <p class="note" style="margin:8px 2px 0">Gilt, wenn unter Einstellungen „Nach Wetter“ gewählt ist.</p>
+    <div class="lbl">Wetter</div>
+    <div class="tags" data-group="wetter"><button class="tag" data-t="klar">Klar</button><button class="tag" data-t="wolkig">Wolkig</button><button class="tag" data-t="regen">Regen</button><button class="tag" data-t="schnee">Schnee</button></div>
+    <div class="lbl">Tageszeit</div>
+    <div class="tags" data-group="zeit"><button class="tag" data-t="tag">Tag</button><button class="tag" data-t="daemmerung">Dämmerung</button><button class="tag" data-t="nacht">Nacht</button></div>
+    <div class="lbl">Jahreszeit</div>
+    <div class="tags" data-group="saison"><button class="tag" data-t="fruehling">Frühling</button><button class="tag" data-t="sommer">Sommer</button><button class="tag" data-t="herbst">Herbst</button><button class="tag" data-t="winter">Winter</button></div>
+    </details>
+    <button class="primary" id="upGo">Hochladen</button>
+    <div class="bar" id="upBar" hidden><i></i></div>
+    <div class="status-line" id="upStatus"></div>
+  </div>
+
+  <div class="grid" id="mediaGrid"></div>
+  <p class="note" id="mediaNote"></p>
+</section>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel">
+    <div class="prev" id="shPrev"></div>
+    <h3 id="shName" style="margin:0 0 2px;font-size:16px;word-break:break-all"></h3>
+    <p class="sub" id="shSub" style="color:var(--muted);font-size:13px;margin:0 0 6px"></p>
+    <details class="wxd" id="shWx"><summary>Nur bei bestimmtem Wetter zeigen</summary>
+    <div class="lbl">Wetter</div>
+    <div class="tags" data-group="wetter"><button class="tag" data-t="klar">Klar</button><button class="tag" data-t="wolkig">Wolkig</button><button class="tag" data-t="regen">Regen</button><button class="tag" data-t="schnee">Schnee</button></div>
+    <div class="lbl">Tageszeit</div>
+    <div class="tags" data-group="zeit"><button class="tag" data-t="tag">Tag</button><button class="tag" data-t="daemmerung">Dämmerung</button><button class="tag" data-t="nacht">Nacht</button></div>
+    <div class="lbl">Jahreszeit</div>
+    <div class="tags" data-group="saison"><button class="tag" data-t="fruehling">Frühling</button><button class="tag" data-t="sommer">Sommer</button><button class="tag" data-t="herbst">Herbst</button><button class="tag" data-t="winter">Winter</button></div>
+    <button class="ghost" id="shSave" style="width:100%;margin-top:4px">Merkmale speichern</button>
+    </details>
+    <div class="actions"><button class="ghost" id="shShow">Jetzt zeigen</button></div>
+    <div class="actions"><button class="ghost danger" id="shDel">Löschen</button><button class="ghost" id="shClose">Schließen</button></div>
+  </div>
+</div>
+
+<!-- ---------- Einstellungen ---------- -->
+<section id="tab-settings" hidden>
+  <div class="card">
+    <h3>Hintergrund</h3>
+    <p class="sub" id="bgSub">…</p>
+    <div class="h-seg" style="margin:0"><button id="bgRandom">Zufällig</button><button id="bgWeather">Nach Wetter</button></div>
+  </div>
+
+  <div class="card">
+    <h3>Ort für das Wetter</h3>
+    <p class="sub" id="ortNow">…</p>
+    <div class="row2"><input class="field" id="ortQ" placeholder="Ort suchen, z. B. Hannover" autocomplete="off" enterkeyhint="search"><button class="ghost" id="ortGo">Suchen</button></div>
+    <div class="results" id="ortRes"></div>
+    <details><summary>Ort automatisch ermitteln</summary>
+      <p class="note">Ermittelt den Ort über die Internetadresse. Das ist oft ungenau, deshalb lieber oben einen Ort suchen.</p>
+      <button class="ghost" id="ortAuto" style="margin-top:8px">Automatisch verwenden</button>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3>Wetteranzeige</h3>
+    <p class="sub">Ein- oder ausschalten, dann im Mini-Bildschirm die Ecke antippen.</p>
+    <div id="wxPlaces"></div>
+  </div>
+
+  <div class="card">
+    <h3>Updates</h3>
+    <p class="sub" id="updVer">…</p>
+    <div class="set"><div class="txt"><b>Automatisch installieren</b><span>beim Start, beim Aufwachen und alle 6 Stunden</span></div>
+      <label class="switch"><input type="checkbox" id="updAuto"><i></i></label></div>
+    <button class="primary" id="updCheck" style="margin-top:4px">Jetzt nach Updates suchen</button>
+    <div class="status-line" id="updStatus"></div>
+    <details><summary>Quelle (GitHub)</summary>
+      <div class="lbl">Repository</div>
+      <input class="field" id="updRepo" placeholder="besitzer/repo" autocomplete="off" autocapitalize="off">
+      <div class="lbl">Token (nur bei privatem Repository, Leserecht genügt)</div>
+      <input class="field" id="updToken" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off">
+      <button class="ghost" id="updSave" style="margin-top:10px">Quelle speichern</button>
+    </details>
+  </div>
+</section>
+</div>
+
+<!-- Beamer wählen -->
+<div class="sheet" id="devSheet" hidden>
+  <div class="panel">
+    <h3 style="margin:2px 2px 12px;font-size:18px">Beamer</h3>
+    <div class="results" id="devList"></div>
+    <div class="actions"><button class="ghost" id="devSearch">Weiteren Beamer suchen</button></div>
+    <div class="actions"><button class="ghost danger" id="devForget">Diesen vergessen</button><button class="ghost" id="devClose">Schließen</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="http://hub.local/sdk/hub.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -21,3 +21,7 @@ __pycache__/
 /tools/render.py
 /restore.ps1
 /NOTIZEN.md
+
+# Erzeugt von tools/pack_ext.py
+/handy/assets/ext/
+/dist/
