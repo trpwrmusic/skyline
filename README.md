@@ -12,6 +12,8 @@ Sollte auf jedem Android-TV-Gerät ab Android 9 laufen.
 - **Fenster-Modus:** Blendet alles aus, bis auf das Bild. Dazu kommen echte Fensterrahmen mit Sprossen in mehreren Rastern
   und Farben. Nach 2 Stunden ohne Tastendruck geht der Beamer schlafen.
 - **Bildschirmschoner:** Zeigt dasselbe Fenster.
+- **Quellenauswahl:** Der Glasknopf „Quelle“ oben neben WLAN zeigt nur die HDMI-Anschlüsse, an denen gerade ein Gerät
+  hängt (mit dem Gerätenamen, wenn es sich per HDMI-CEC meldet). OK schaltet um.
 - **Wetteranzeige:** Symbol, Temperatur und Ort. Für Startbildschirm, Fenster-Modus und Bildschirmschoner getrennt
   ein- und ausschaltbar, in einer Ecke deiner Wahl.
 - **App-Regal:** Lieblings-Apps zum Sortieren, dazu „Alle Apps“ und ein Medien-Dock für Spotify, YouTube Music und andere.

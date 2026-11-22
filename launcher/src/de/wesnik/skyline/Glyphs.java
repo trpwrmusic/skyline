@@ -89,6 +89,31 @@ final class Glyphs {
         };
     }
 
+    /** Quelle: links offener Rahmen, ein Pfeil läuft hinein (Eingang). */
+    static Drawable source() {
+        return new Base() {
+            @Override public void draw(Canvas c) {
+                Rect b = getBounds();
+                float s = Math.min(b.width(), b.height()), cx = b.centerX(), cy = b.centerY();
+                Paint st = new Paint(p);
+                st.setStyle(Paint.Style.STROKE);
+                st.setStrokeCap(Paint.Cap.ROUND);
+                st.setStrokeJoin(Paint.Join.ROUND);
+                st.setStrokeWidth(s * .1f);
+                float l = cx - s * .04f, r = cx + s * .44f, t = cy - s * .38f, bo = cy + s * .38f, k = s * .1f;
+                Path box = new Path();
+                box.moveTo(l, t); box.lineTo(r - k, t); box.quadTo(r, t, r, t + k);
+                box.lineTo(r, bo - k); box.quadTo(r, bo, r - k, bo); box.lineTo(l, bo);
+                c.drawPath(box, st);
+                float ax = cx + s * .18f, h = s * .17f;
+                c.drawLine(cx - s * .46f, cy, ax, cy, st);
+                Path head = new Path();
+                head.moveTo(ax - h, cy - h); head.lineTo(ax, cy); head.lineTo(ax - h, cy + h);
+                c.drawPath(head, st);
+            }
+        };
+    }
+
     /** Trapezkorrektur: hohler Trapez-Rahmen (schräge Projektionsfläche) mit Mittelpunkt-Kreuz. */
     static Drawable keystone() {
         return new Base() {

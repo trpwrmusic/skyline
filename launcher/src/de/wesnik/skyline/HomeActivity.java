@@ -197,6 +197,7 @@ public class HomeActivity extends Activity {
         topIcons.setClipToPadding(false);
         topIcons.setPadding(dp(8), dp(8), dp(8), dp(8));
         addTopIcon(Glyphs.window(), "Fenster-Modus", new Runnable() { @Override public void run() { enterWindow(); } });
+        sourceButton = addTopIcon(Glyphs.source(), "Quelle", new Runnable() { @Override public void run() { openSources(); } });
         addTopIcon(Glyphs.wifi(), "WLAN", new Intent(Settings.ACTION_WIFI_SETTINGS));
         addTopIcon(Glyphs.keystone(), "Trapezkorrektur", new Intent("com.xgimi.windowsystem.kst"));
         addTopIcon(Glyphs.gear(dp(1)), "Einstellungen", new Intent(Settings.ACTION_SETTINGS));
@@ -393,7 +394,7 @@ public class HomeActivity extends Activity {
     }
 
     @Override protected void onPause() {
-        super.onPause(); resumed = false; exitWindow(false); stage.stop(); media.stop(); endMove(); closeMenu(false);
+        super.onPause(); resumed = false; closeSources(false); exitWindow(false); stage.stop(); media.stop(); endMove(); closeMenu(false);
         if (bigClock.getVisibility() == View.VISIBLE) {
             bigClock.setVisibility(View.GONE);
             ui.removeCallbacks(bigTick);
@@ -412,6 +413,7 @@ public class HomeActivity extends Activity {
         super.onNewIntent(i);
         endMove();
         closeMenu(false);
+        closeSources(false);
         String act = i.getStringExtra(EXTRA_REMOTE);
         if (act != null) { remoteAction(act); return; }
         if (windowMode) { exitWindow(true); return; }
@@ -599,6 +601,7 @@ public class HomeActivity extends Activity {
     /** Aktionen von der Handy-Fernbedienung. */
     private void remoteAction(String a) {
         if (windowMode && !"window".equals(a)) exitWindow(false);
+        closeSources(false);
         switch (a) {
             case "bigclock": if (bigClock.getVisibility() == View.VISIBLE) hideBigClock(); else showBigClock(); break;
             case "seconds": stage.toggleSeconds(); break;
@@ -613,13 +616,185 @@ public class HomeActivity extends Activity {
         addTopIcon(icon, label, new Runnable() { @Override public void run() { startSafe(new Intent(intent)); } });
     }
 
-    private void addTopIcon(android.graphics.drawable.Drawable icon, String label, final Runnable run) {
+    private IconButton addTopIcon(android.graphics.drawable.Drawable icon, String label, final Runnable run) {
         IconButton b = new IconButton(this, icon, label, dp(44));
         b.attach(stage);
         b.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { run.run(); } });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(44), dp(44));
         lp.leftMargin = dp(14);
         topIcons.addView(b, lp);
+        return b;
+    }
+
+    // ---------- Quellenauswahl (Glasknopf „Quelle“ oben) ----------
+    private IconButton sourceButton;
+    private GlassPanel srcPanel;
+    private LinearLayout srcRow;
+    private TextView srcHint;
+    private List<Sources.Port> srcPorts = new ArrayList<>();
+    private int srcIndex;
+    private boolean srcOpen;
+    private android.media.tv.TvInputManager.TvInputCallback srcCallback;
+
+    private void openSources() {
+        if (srcPanel == null) {
+            srcPanel = new GlassPanel(this, dp(24));
+            srcPanel.attach(stage);
+            srcPanel.setElevation(dp(20));
+            LinearLayout col = new LinearLayout(this);
+            col.setOrientation(LinearLayout.VERTICAL);
+            col.setGravity(Gravity.CENTER_HORIZONTAL);
+            col.setPadding(dp(12), dp(12), dp(12), dp(10));
+            srcRow = new LinearLayout(this);
+            srcRow.setOrientation(LinearLayout.HORIZONTAL);
+            col.addView(srcRow);
+            srcHint = new TextView(this);
+            srcHint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            srcHint.setTextColor(0x99FFFFFF);
+            srcHint.setPadding(dp(4), dp(10), dp(4), 0);
+            col.addView(srcHint);
+            srcPanel.addView(col, new FrameLayout.LayoutParams(-2, -2));
+            FrameLayout.LayoutParams pl = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
+            pl.rightMargin = dp(40);
+            pl.topMargin = dp(22 + 8 + 44 + 16);
+            stage.addForeground(srcPanel, pl);
+        }
+        srcOpen = true;
+        srcIndex = 0;
+        srcPorts = new ArrayList<>();
+        buildSources();
+        watchSources(true);
+        srcPanel.bringToFront();
+        srcPanel.animate().cancel();
+        srcPanel.setVisibility(View.VISIBLE);
+        srcPanel.setAlpha(0f); srcPanel.setTranslationY(-dp(8));
+        srcPanel.animate().alpha(1f).translationY(0).setDuration(Stage.animationsEnabled(this) ? 180 : 0).start();
+    }
+
+    /** Chips neu aufbauen: nur Anschlüsse, an denen ein Gerät hängt. Auswahl bleibt beim selben Anschluss. */
+    private void buildSources() {
+        String keep = srcIndex < srcPorts.size() ? srcPorts.get(srcIndex).id : null;
+        srcPorts = Sources.connected(this);
+        srcIndex = 0;
+        for (int i = 0; i < srcPorts.size(); i++) if (srcPorts.get(i).id.equals(keep)) srcIndex = i;
+        srcRow.removeAllViews();
+        if (srcPorts.isEmpty()) {
+            TextView t = new TextView(this);
+            t.setText("Kein Gerät angeschlossen");
+            t.setTextColor(0xE6FFFFFF);
+            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            t.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            t.setPadding(dp(14), dp(10), dp(14), dp(2));
+            srcRow.addView(t);
+            srcHint.setText("HDMI-Gerät einstecken und einschalten  ·  Zurück schließen");
+            return;
+        }
+        for (int i = 0; i < srcPorts.size(); i++) {
+            Sources.Port p = srcPorts.get(i);
+            LinearLayout chip = new LinearLayout(this);
+            chip.setOrientation(LinearLayout.VERTICAL);
+            chip.setGravity(Gravity.CENTER_HORIZONTAL);
+            chip.setPadding(dp(18), dp(12), dp(18), dp(10));
+            chip.setMinimumWidth(dp(118));
+            android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+            bg.setCornerRadius(dp(16));
+            chip.setBackground(bg);
+            ImageView g = new ImageView(this);
+            g.setImageDrawable(Glyphs.source());
+            chip.addView(g, new LinearLayout.LayoutParams(dp(26), dp(26)));
+            TextView title = new TextView(this);
+            title.setText(p.title);
+            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            title.setSingleLine(true);
+            title.setPadding(0, dp(7), 0, 0);
+            chip.addView(title);
+            TextView sub = new TextView(this);
+            sub.setText(p.sub);
+            sub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            sub.setSingleLine(true);
+            sub.setEllipsize(TextUtils.TruncateAt.END);
+            sub.setMaxWidth(dp(180));
+            chip.addView(sub);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            if (i > 0) lp.leftMargin = dp(6);
+            srcRow.addView(chip, lp);
+        }
+        srcHint.setText(srcPorts.size() > 1 ? "◀ ▶ wählen  ·  OK umschalten  ·  Zurück schließen" : "OK umschalten  ·  Zurück schließen");
+        markSource();
+    }
+
+    private void markSource() {
+        for (int k = 0; k < srcRow.getChildCount() && k < srcPorts.size(); k++) {
+            LinearLayout chip = (LinearLayout) srcRow.getChildAt(k);
+            boolean on = k == srcIndex;
+            ((android.graphics.drawable.GradientDrawable) chip.getBackground()).setColor(on ? 0xF2FFFFFF : 0x00FFFFFF);
+            int fg = on ? 0xFF15161A : 0xE6FFFFFF;
+            ((ImageView) chip.getChildAt(0)).setColorFilter(fg, android.graphics.PorterDuff.Mode.SRC_IN);
+            ((TextView) chip.getChildAt(1)).setTextColor(fg);
+            ((TextView) chip.getChildAt(2)).setTextColor(on ? 0xB315161A : 0x99FFFFFF);
+        }
+    }
+
+    private void chooseSource() {
+        if (srcPorts.isEmpty()) { closeSources(true); return; }
+        Sources.Port p = srcPorts.get(srcIndex);
+        closeSources(true);
+        for (Intent i : Sources.intents(p)) {
+            try { i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); return; }
+            catch (ActivityNotFoundException | SecurityException ignored) { }
+        }
+        flash(p.title + " lässt sich gerade nicht öffnen");
+    }
+
+    private void closeSources(boolean refocus) {
+        if (!srcOpen) return;
+        srcOpen = false;
+        watchSources(false);
+        srcPanel.animate().cancel();
+        srcPanel.animate().alpha(0f).translationY(-dp(8)).setDuration(Stage.animationsEnabled(this) ? 140 : 0).withEndAction(new Runnable() {
+            @Override public void run() { if (!srcOpen) srcPanel.setVisibility(View.GONE); }
+        }).start();
+        if (refocus && sourceButton != null) sourceButton.requestFocus();
+    }
+
+    /** Während die Auswahl offen ist: Kabel rein/raus sofort anzeigen. */
+    private void watchSources(boolean on) {
+        android.media.tv.TvInputManager tm = Sources.manager(this);
+        if (tm == null) return;
+        try {
+            if (on && srcCallback == null) {
+                srcCallback = new android.media.tv.TvInputManager.TvInputCallback() {
+                    @Override public void onInputStateChanged(String id, int state) { if (srcOpen) buildSources(); }
+                    @Override public void onInputAdded(String id) { if (srcOpen) buildSources(); }
+                    @Override public void onInputRemoved(String id) { if (srcOpen) buildSources(); }
+                    @Override public void onInputUpdated(String id) { if (srcOpen) buildSources(); }
+                };
+                tm.registerCallback(srcCallback, ui);
+            } else if (!on && srcCallback != null) {
+                tm.unregisterCallback(srcCallback);
+                srcCallback = null;
+            }
+        } catch (Exception ignored) { }
+    }
+
+    /** Tasten, solange die Quellenauswahl offen ist. true = verbraucht. */
+    private boolean sourceKey(KeyEvent e) {
+        int kc = e.getKeyCode();
+        if (kc == KeyEvent.KEYCODE_HOME || kc == KeyEvent.KEYCODE_VOLUME_UP || kc == KeyEvent.KEYCODE_VOLUME_DOWN
+                || kc == KeyEvent.KEYCODE_VOLUME_MUTE || isMediaKey(kc)) return false;
+        boolean ok = kc == KeyEvent.KEYCODE_DPAD_CENTER || kc == KeyEvent.KEYCODE_ENTER || kc == KeyEvent.KEYCODE_NUMPAD_ENTER;
+        if (e.getAction() == KeyEvent.ACTION_DOWN && (kc == KeyEvent.KEYCODE_DPAD_LEFT || kc == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+            if (!srcPorts.isEmpty()) {
+                srcIndex = Math.max(0, Math.min(srcPorts.size() - 1, srcIndex + (kc == KeyEvent.KEYCODE_DPAD_LEFT ? -1 : 1)));
+                markSource();
+            }
+        } else if (e.getAction() == KeyEvent.ACTION_UP && ok) {
+            chooseSource();
+        } else if (e.getAction() == KeyEvent.ACTION_UP && (kc == KeyEvent.KEYCODE_BACK || kc == KeyEvent.KEYCODE_DPAD_UP || kc == KeyEvent.KEYCODE_DPAD_DOWN)) {
+            closeSources(true);
+        }
+        return true;
     }
 
     private void addDockTile(Tile t) {
@@ -891,6 +1066,7 @@ public class HomeActivity extends Activity {
             if (e.getAction() == KeyEvent.ACTION_UP) { centerDown = false; longFired = false; exitWindow(true); }
             return true;
         }
+        if (srcOpen && sourceKey(e)) return true;
         if (bigClock != null && bigClock.getVisibility() == View.VISIBLE) {
             int kc = e.getKeyCode();
             boolean c = kc == KeyEvent.KEYCODE_DPAD_CENTER || kc == KeyEvent.KEYCODE_ENTER;
